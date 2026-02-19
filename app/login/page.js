@@ -1,5 +1,6 @@
 'use client';
 
+import { kullaniciyiYonlendir } from '@/lib/auth';
 import { auth } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
@@ -15,9 +16,10 @@ export default function LoginPage() {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push('/');
+      const result = await signInWithPopup(auth, provider);
+      await kullaniciyiYonlendir(result.user, router);
     } catch (err) {
+      console.error(err);
       setError('Google ile giriş başarısız.');
     }
   };
@@ -25,9 +27,10 @@ export default function LoginPage() {
   const signInWithEmail = async (e) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/');
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      await kullaniciyiYonlendir(result.user, router);
     } catch (err) {
+      console.error(err);
       setError('Email veya şifre hatalı.');
     }
   };
