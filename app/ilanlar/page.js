@@ -3,7 +3,7 @@
 import { db, auth } from '@/lib/firebase';
 import {
   collection, addDoc, query, where,
-  orderBy, onSnapshot, Timestamp
+  orderBy, onSnapshot, Timestamp, getDocs
 } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -22,6 +22,7 @@ const ILCELER = [
 export default function IlanlarPage() {
   const [ilanlar, setIlanlar] = useState([]);
   const [kullanici, setKullanici] = useState(null);
+  const [kullaniciTip, setKullaniciTip] = useState(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [formAcik, setFormAcik] = useState(false);
   const [filtre, setFiltre] = useState({ kategori: '', ilce: '' });
@@ -36,10 +37,24 @@ export default function IlanlarPage() {
   const [gonderiyor, setGonderiyor] = useState(false);
   const [error, setError] = useState('');
 
-  // Auth dinle
+  // Auth dinle ve kullanıcı tipini belirle
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setKullanici(user);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setKullanici(user);
+        // Futbolcu mu saha mı kontrol et
+        const futbolcuSnap = await getDocs(
+          query(collection(db, 'futbolcular'), where('__name__', '==', user.uid))
+        );
+        if (!futbolcuSnap.empty) {
+          setKullaniciTip('futbolcu');
+        } else {
+          setKullaniciTip('saha');
+        }
+      } else {
+        setKullanici(null);
+        setKullaniciTip(null);
+      }
     });
     return () => unsub();
   }, []);
@@ -47,7 +62,7 @@ export default function IlanlarPage() {
   // İlanları dinle
   useEffect(() => {
     const simdi = Timestamp.now();
-    let q = query(
+    const q = query(
       collection(db, 'ilanlar'),
       where('silinmeZamani', '>', simdi),
       orderBy('silinmeZamani', 'desc')
@@ -74,6 +89,7 @@ export default function IlanlarPage() {
       await addDoc(collection(db, 'ilanlar'), {
         ...form,
         uid: kullanici.uid,
+        acanTip: kullaniciTip,
         silinmeZamani,
         olusturulma: Timestamp.now(),
       });
@@ -144,6 +160,9 @@ export default function IlanlarPage() {
             <select value={form.kategori} onChange={e => setForm({ ...form, kategori: e.target.value })} style={inputStyle}>
               <option value="Oyuncu Arıyorum">Oyuncu Arıyorum</option>
               <option value="Takım Arıyorum">Takım Arıyorum</option>
+              {kullaniciTip === 'saha' && (
+                <option value="Duyuru">Duyuru</option>
+              )}
             </select>
             <select value={form.ilce} onChange={e => setForm({ ...form, ilce: e.target.value })} style={inputStyle}>
               <option value="">İlçe seç *</option>
@@ -151,7 +170,7 @@ export default function IlanlarPage() {
             </select>
             <input
               type="text"
-              placeholder="Başlık * (örn: Kadıköy 20:00 için 2 oyuncu arıyorum)"
+              placeholder="Başlık *"
               value={form.baslik}
               onChange={e => setForm({ ...form, baslik: e.target.value })}
               style={inputStyle}
@@ -201,6 +220,7 @@ export default function IlanlarPage() {
           <option value="">Tüm Kategoriler</option>
           <option value="Oyuncu Arıyorum">Oyuncu Arıyorum</option>
           <option value="Takım Arıyorum">Takım Arıyorum</option>
+          <option value="Duyuru">Duyuru</option>
         </select>
         <select
           value={filtre.ilce}
@@ -235,8 +255,8 @@ export default function IlanlarPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{
-                    background: ilan.kategori === 'Oyuncu Arıyorum' ? '#dcfce7' : '#dbeafe',
-                    color: ilan.kategori === 'Oyuncu Arıyorum' ? '#166534' : '#1e40af',
+                    background: ilan.kategori === 'Oyuncu Arıyorum' ? '#dcfce7' : ilan.kategori === 'Takım Arıyorum' ? '#dbeafe' : '#f1f5f9',
+                    color: ilan.kategori === 'Oyuncu Arıyorum' ? '#166534' : ilan.kategori === 'Takım Arıyorum' ? '#1e40af' : '#475569',
                     padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700
                   }}>
                     {ilan.kategori}
@@ -244,6 +264,11 @@ export default function IlanlarPage() {
                   <span style={{ background: '#f1f5f9', color: '#475569', padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
                     📍 {ilan.ilce}
                   </span>
+                  {ilan.acanTip === 'saha' && (
+                    <span style={{ background: '#fef9c3', color: '#713f12', padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                      🏟️ Saha
+                    </span>
+                  )}
                 </div>
                 <span style={{ fontSize: 11, color: '#aaa', flexShrink: 0 }}>
                   ⏱ {kalanSure(ilan.silinmeZamani)}
@@ -260,7 +285,6 @@ export default function IlanlarPage() {
           ))}
         </div>
       )}
-
     </div>
   );
 }

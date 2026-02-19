@@ -28,11 +28,8 @@ export default function ProfilPage() {
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      const docSnap = await getDoc(doc(db, 'users', user.uid));
+      if (!user) { router.push('/login'); return; }
+      const docSnap = await getDoc(doc(db, 'futbolcular', user.uid));
       if (docSnap.exists()) {
         const data = { ...docSnap.data(), uid: user.uid, email: user.email };
         setKullanici(data);
@@ -46,7 +43,7 @@ export default function ProfilPage() {
   const kaydet = async () => {
     setKaydediliyor(true);
     try {
-      await updateDoc(doc(db, 'users', kullanici.uid), {
+      await updateDoc(doc(db, 'futbolcular', kullanici.uid), {
         ad: form.ad,
         mevki: form.mevki,
         baskinAyak: form.baskinAyak,
@@ -84,7 +81,8 @@ export default function ProfilPage() {
 
   const labelStyle = {
     fontSize: 12, fontWeight: 600, color: '#6b7c6b',
-    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4, display: 'block'
+    textTransform: 'uppercase', letterSpacing: 1,
+    marginBottom: 4, display: 'block'
   };
 
   const alanStyle = {
@@ -95,11 +93,8 @@ export default function ProfilPage() {
   return (
     <div style={{ maxWidth: 560, margin: '60px auto', padding: 24 }}>
 
-      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-        <Link href="/" style={{ fontSize: 13, color: '#16a34a', textDecoration: 'none' }}>
-          ← Ana Sayfa
-        </Link>
+        <Link href="/" style={{ fontSize: 13, color: '#16a34a', textDecoration: 'none' }}>← Ana Sayfa</Link>
         <button onClick={cikisYap} style={{
           padding: '8px 16px', border: '1.5px solid #ddd',
           background: 'white', borderRadius: 8, cursor: 'pointer',
@@ -109,7 +104,6 @@ export default function ProfilPage() {
         </button>
       </div>
 
-      {/* PROFİL KARTI */}
       <div style={{
         background: 'white', border: '1.5px solid #dde8dd',
         borderRadius: 16, padding: 24, marginBottom: 20, textAlign: 'center'
@@ -118,40 +112,33 @@ export default function ProfilPage() {
           width: 72, height: 72, borderRadius: '50%',
           background: '#dcfce7', display: 'flex', alignItems: 'center',
           justifyContent: 'center', fontSize: 28, margin: '0 auto 12px'
-        }}>
-          ⚽
-        </div>
+        }}>⚽</div>
         <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
-          {kullanici.ad || 'İsimsiz Oyuncu'}
+          {kullanici?.ad || 'İsimsiz Oyuncu'}
         </h2>
-        <p style={{ fontSize: 13, color: '#6b7c6b', marginBottom: 12 }}>
-          {kullanici.email}
-        </p>
+        <p style={{ fontSize: 13, color: '#6b7c6b', marginBottom: 12 }}>{kullanici?.email}</p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {kullanici.mevki && (
+          {kullanici?.mevki && (
             <span style={{ background: '#dcfce7', color: '#166534', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
               {kullanici.mevki}
             </span>
           )}
-          {kullanici.seviye && (
+          {kullanici?.seviye && (
             <span style={{ background: '#dbeafe', color: '#1e40af', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
               {kullanici.seviye}
             </span>
           )}
-          {kullanici.ilce && (
+          {kullanici?.ilce && (
             <span style={{ background: '#f1f5f9', color: '#475569', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
               📍 {kullanici.ilce}
             </span>
           )}
         </div>
-        {kullanici.bio && (
-          <p style={{ fontSize: 13, color: '#6b7c6b', marginTop: 12, lineHeight: 1.5 }}>
-            {kullanici.bio}
-          </p>
+        {kullanici?.bio && (
+          <p style={{ fontSize: 13, color: '#6b7c6b', marginTop: 12, lineHeight: 1.5 }}>{kullanici.bio}</p>
         )}
       </div>
 
-      {/* BAŞARI MESAJI */}
       {basari && (
         <div style={{
           background: '#f0fdf4', border: '1.5px solid #86efac',
@@ -162,16 +149,13 @@ export default function ProfilPage() {
         </div>
       )}
 
-      {/* DÜZENLE / KAYDET BUTON */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
         {duzenle ? (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setDuzenle(false)} style={{
               padding: '8px 16px', border: '1.5px solid #ddd',
               background: 'white', borderRadius: 8, cursor: 'pointer', fontSize: 13
-            }}>
-              İptal
-            </button>
+            }}>İptal</button>
             <button onClick={kaydet} disabled={kaydediliyor} style={{
               padding: '8px 16px', background: '#16a34a', color: 'white',
               border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700
@@ -189,18 +173,21 @@ export default function ProfilPage() {
         )}
       </div>
 
-      {/* BİLGİLER */}
       {duzenle ? (
         <div>
-          <div style={alanStyle}>
-            <label style={labelStyle}>Ad Soyad</label>
-            <input
-              type="text"
-              value={form.ad || ''}
-              onChange={e => setForm({ ...form, ad: e.target.value })}
-              style={inputStyle}
-            />
-          </div>
+          {[
+            { label: 'Ad Soyad', key: 'ad', type: 'input' },
+          ].map(alan => (
+            <div key={alan.key} style={alanStyle}>
+              <label style={labelStyle}>{alan.label}</label>
+              <input
+                type="text"
+                value={form[alan.key] || ''}
+                onChange={e => setForm({ ...form, [alan.key]: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+          ))}
           <div style={alanStyle}>
             <label style={labelStyle}>Mevki</label>
             <select value={form.mevki || ''} onChange={e => setForm({ ...form, mevki: e.target.value })} style={inputStyle}>
@@ -260,10 +247,10 @@ export default function ProfilPage() {
       ) : (
         <div>
           {[
-            { label: 'Baskın Ayak', value: kullanici.baskinAyak },
-            { label: 'Yaş Aralığı', value: kullanici.yasAraligi },
-            { label: 'Email', value: kullanici.email },
-          ].map((item, i) => item.value && (
+            { label: 'Baskın Ayak', value: kullanici?.baskinAyak },
+            { label: 'Yaş Aralığı', value: kullanici?.yasAraligi },
+            { label: 'Email', value: kullanici?.email },
+          ].filter(item => item.value).map((item, i) => (
             <div key={i} style={alanStyle}>
               <label style={labelStyle}>{item.label}</label>
               <p style={{ fontSize: 14, fontWeight: 600 }}>{item.value}</p>
@@ -271,7 +258,6 @@ export default function ProfilPage() {
           ))}
         </div>
       )}
-
     </div>
   );
 }

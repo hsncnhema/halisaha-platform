@@ -15,11 +15,11 @@ export default function KayitPage() {
   const router = useRouter();
 
   const kayitOl = async (uid, email, ad) => {
-    await setDoc(doc(db, 'users', uid), {
+    await setDoc(doc(db, 'futbolcular', uid), {
       ad,
       email,
-      rol: 'futbolcu',
       olusturulma: new Date(),
+      profilTamamlandi: false,
     });
     router.push('/profil-tamamla');
   };
@@ -28,8 +28,7 @@ export default function KayitPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      await kayitOl(user.uid, user.email, user.displayName);
+      await kayitOl(result.user.uid, result.user.email, result.user.displayName);
     } catch (err) {
       setError('Google ile kayıt başarısız.');
     }
@@ -37,17 +36,14 @@ export default function KayitPage() {
 
   const emailIleKayit = async (e) => {
     e.preventDefault();
+    if (!ad) { setError('Adın zorunlu.'); return; }
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       await kayitOl(result.user.uid, email, ad);
     } catch (err) {
-      if (err.code === 'auth/email-already-in-use') {
-        setError('Bu email zaten kayıtlı.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Şifre en az 6 karakter olmalı.');
-      } else {
-        setError('Kayıt başarısız, tekrar dene.');
-      }
+      if (err.code === 'auth/email-already-in-use') setError('Bu email zaten kayıtlı.');
+      else if (err.code === 'auth/weak-password') setError('Şifre en az 6 karakter olmalı.');
+      else setError('Kayıt başarısız, tekrar dene.');
     }
   };
 
@@ -56,9 +52,7 @@ export default function KayitPage() {
       <h1 style={{ marginBottom: 8, fontSize: 24, fontWeight: 700 }}>⚽ Futbolcu Kayıt</h1>
       <p style={{ marginBottom: 24, color: '#6b7c6b', fontSize: 14 }}>
         Zaten hesabın var mı?{' '}
-        <Link href="/login" style={{ color: '#16a34a', fontWeight: 600 }}>
-          Giriş yap
-        </Link>
+        <Link href="/login" style={{ color: '#16a34a', fontWeight: 600 }}>Giriş yap</Link>
       </p>
 
       <button onClick={googleIleKayit} style={{
@@ -97,21 +91,16 @@ export default function KayitPage() {
         />
         {error && <p style={{ color: 'red', marginBottom: 12, fontSize: 14 }}>{error}</p>}
         <button type="submit" style={{
-          width: '100%', padding: 12,
-          background: '#16a34a', color: 'white', border: 'none',
-          borderRadius: 8, cursor: 'pointer', fontSize: 16
+          width: '100%', padding: 12, background: '#16a34a', color: 'white',
+          border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 16
         }}>
           Kayıt Ol
         </button>
       </form>
 
-      <div style={{
-        marginTop: 32, paddingTop: 20,
-        borderTop: '1px solid #eee', textAlign: 'center'
-      }}>
+      <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #eee', textAlign: 'center' }}>
         <Link href="/kayit/halisaha" style={{
-          fontSize: 13, color: '#16a34a', fontWeight: 600,
-          textDecoration: 'none'
+          fontSize: 13, color: '#16a34a', fontWeight: 600, textDecoration: 'none'
         }}>
           🏟️ Halı saha olarak kayıt ol →
         </Link>
