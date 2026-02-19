@@ -13,12 +13,22 @@ export default function AnaSayfa() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const docSnap = await getDoc(doc(db, 'users', user.uid));
-        if (docSnap.exists()) {
-          setKullanici({ ...user, ...docSnap.data() });
-        } else {
-          setKullanici(user);
+        // Önce futbolcular koleksiyonuna bak
+        const futbolcuSnap = await getDoc(doc(db, 'futbolcular', user.uid));
+        if (futbolcuSnap.exists()) {
+          setKullanici({ ...user, ...futbolcuSnap.data(), tip: 'futbolcu' });
+          setYukleniyor(false);
+          return;
         }
+        // Sonra sahalar koleksiyonuna bak
+        const sahaSnap = await getDoc(doc(db, 'sahalar', user.uid));
+        if (sahaSnap.exists()) {
+          setKullanici({ ...user, ...sahaSnap.data(), tip: 'saha' });
+          setYukleniyor(false);
+          return;
+        }
+        // Hiçbirinde yoksa sadece auth bilgisiyle devam et
+        setKullanici(user);
       } else {
         setKullanici(null);
       }
@@ -27,13 +37,11 @@ export default function AnaSayfa() {
     return () => unsub();
   }, []);
 
-  if (yukleniyor) {
-    return (
-      <div style={{ maxWidth: 800, margin: '100px auto', padding: 24, textAlign: 'center' }}>
-        <p style={{ color: '#6b7c6b' }}>Yükleniyor...</p>
-      </div>
-    );
-  }
+  if (yukleniyor) return (
+    <div style={{ maxWidth: 800, margin: '100px auto', padding: 24, textAlign: 'center' }}>
+      <p style={{ color: '#6b7c6b' }}>Yükleniyor...</p>
+    </div>
+  );
 
   return (
     <div style={{ maxWidth: 800, margin: '60px auto', padding: 24 }}>
