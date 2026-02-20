@@ -52,7 +52,7 @@ const ILCE_KOORDINATLARI = {
 };
 
 const kalanSure = (silinmeZamani: any) => {
-  const fark = silinmeZamani.toDate() - new Date();
+  const fark = silinmeZamani.toDate().getTime() - new Date().getTime();
   const saat = Math.floor(fark / (1000 * 60 * 60));
   const dakika = Math.floor((fark % (1000 * 60 * 60)) / (1000 * 60));
   if (saat <= 0 && dakika <= 0) return 'Süresi doldu';
