@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 const ISTANBUL_MERKEZ = { lat: 41.0082, lng: 28.9784 };
 
-const ILCE_KOORDINATLARI = {
+const ILCE_KOORDINATLARI: Record<string, { lat: number; lng: number }> = {
   'Adalar': { lat: 40.8713, lng: 29.1253 },
   'Arnavutköy': { lat: 41.1853, lng: 28.7397 },
   'Ataşehir': { lat: 40.9833, lng: 29.1167 },
@@ -61,10 +61,10 @@ const kalanSure = (silinmeZamani: any) => {
 };
 
 export default function AnaSayfa() {
-  const [kullanici, setKullanici] = useState(null);
+  const [kullanici, setKullanici] = useState<any>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
-  const [sahalar, setSahalar] = useState([]);
-  const [ilanlar, setIlanlar] = useState([]);
+  const [sahalar, setSahalar] = useState<any[]>([]);
+  const [ilanlar, setIlanlar] = useState<any[]>([]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -95,7 +95,7 @@ export default function AnaSayfa() {
       const q = query(collection(db, 'sahalar'), where('durum', '==', 'aktif'));
       const snap = await getDocs(q);
       const data = snap.docs.map(d => {
-        const saha = { id: d.id, ...d.data() };
+        const saha: any = { id: d.id, ...d.data() };
         if (!saha.lat && saha.ilce && ILCE_KOORDINATLARI[saha.ilce]) {
           saha.lat = ILCE_KOORDINATLARI[saha.ilce].lat;
           saha.lng = ILCE_KOORDINATLARI[saha.ilce].lng;
@@ -188,7 +188,7 @@ export default function AnaSayfa() {
           </Link>
         </div>
         <div className="rounded-2xl overflow-hidden border border-green-100 h-64 sm:h-80">
-          <APIProvider apiKey={apiKey}>
+          <APIProvider apiKey={apiKey ?? ''}>
             <Map
               defaultCenter={ISTANBUL_MERKEZ}
               defaultZoom={10}
