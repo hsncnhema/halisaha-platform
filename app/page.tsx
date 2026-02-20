@@ -51,7 +51,7 @@ const ILCE_KOORDINATLARI = {
   'Zeytinburnu': { lat: 41.0019, lng: 28.9019 },
 };
 
-const kalanSure = (silinmeZamani) => {
+const kalanSure = (silinmeZamani: any) => {
   const fark = silinmeZamani.toDate() - new Date();
   const saat = Math.floor(fark / (1000 * 60 * 60));
   const dakika = Math.floor((fark % (1000 * 60 * 60)) / (1000 * 60));
