@@ -13,21 +13,18 @@ export default function AnaSayfa() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Önce futbolcular koleksiyonuna bak
         const futbolcuSnap = await getDoc(doc(db, 'futbolcular', user.uid));
         if (futbolcuSnap.exists()) {
           setKullanici({ ...user, ...futbolcuSnap.data(), tip: 'futbolcu' });
           setYukleniyor(false);
           return;
         }
-        // Sonra sahalar koleksiyonuna bak
         const sahaSnap = await getDoc(doc(db, 'sahalar', user.uid));
         if (sahaSnap.exists()) {
           setKullanici({ ...user, ...sahaSnap.data(), tip: 'saha' });
           setYukleniyor(false);
           return;
         }
-        // Hiçbirinde yoksa sadece auth bilgisiyle devam et
         setKullanici(user);
       } else {
         setKullanici(null);
@@ -91,11 +88,11 @@ export default function AnaSayfa() {
           Sahayı bul, WhatsApp'tan rezervasyon yap. Oyuncu ara, takım bul.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/harita" style={{
+          <Link href="/sahalar" style={{
             padding: '12px 28px', background: '#16a34a', color: 'white',
             borderRadius: 8, textDecoration: 'none', fontSize: 16, fontWeight: 700
           }}>
-            🗺️ Haritada Ara
+            🏟️ Sahaları Gör
           </Link>
           <Link href="/ilanlar" style={{
             padding: '12px 28px', border: '1.5px solid #16a34a', color: '#16a34a',
@@ -109,7 +106,7 @@ export default function AnaSayfa() {
       {/* ÖZELLİKLER */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
         {[
-          { icon: '🗺️', baslik: 'Haritada Keşfet', aciklama: 'Çevrendeki sahaları harita üzerinde gör. Boş saatler yeşil, dolu saatler kırmızı.' },
+          { icon: '🏟️', baslik: 'Sahaları Keşfet', aciklama: 'Çevrendeki sahaları listede gör. Boş saatleri tek bakışta anla.' },
           { icon: '📋', baslik: 'İlan Panosu', aciklama: 'Oyuncu ara veya takım bul. İlçene özel ilanları gör.' },
           { icon: '💬', baslik: 'WhatsApp ile Rezervasyon', aciklama: 'Tek tıkla sahaya yaz. Mesajın otomatik hazırlanır.' },
         ].map((item, i) => (
