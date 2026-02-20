@@ -90,7 +90,6 @@ export default function AnaSayfa() {
     return () => unsub();
   }, []);
 
-  // Sahaları çek
   useEffect(() => {
     const getir = async () => {
       const q = query(collection(db, 'sahalar'), where('durum', '==', 'aktif'));
@@ -108,7 +107,6 @@ export default function AnaSayfa() {
     getir();
   }, []);
 
-  // İlanları dinle
   useEffect(() => {
     const simdi = Timestamp.now();
     const q = query(
@@ -124,44 +122,35 @@ export default function AnaSayfa() {
   }, []);
 
   if (yukleniyor) return (
-    <div style={{ maxWidth: 800, margin: '100px auto', padding: 24, textAlign: 'center' }}>
-      <p style={{ color: '#6b7c6b' }}>Yükleniyor...</p>
+    <div className="max-w-2xl mx-auto mt-24 px-4 text-center">
+      <p className="text-gray-500">Yükleniyor...</p>
     </div>
   );
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px 60px' }}>
+    <div className="max-w-4xl mx-auto px-4 pb-16 pt-6">
 
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#16a34a' }}>⚽ HalıSaha</h1>
+      <div className="flex justify-between items-center mb-10">
+        <h1 className="text-2xl font-extrabold text-green-600">⚽ HalıSaha</h1>
         <div>
           {kullanici ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ fontSize: 14, color: '#6b7c6b' }}>
+            <div className="flex items-center gap-4">
+              <span className="hidden sm:block text-sm text-gray-500">
                 Merhaba, {kullanici.ad || kullanici.displayName || 'Oyuncu'}
               </span>
-              <Link href="/profil" style={{
-                padding: '8px 16px', background: '#16a34a', color: 'white',
-                borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600
-              }}>
+              <Link href="/profil" className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition">
                 Profilim
               </Link>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Link href="/login" style={{
-                padding: '8px 16px', border: '1.5px solid #16a34a', color: '#16a34a',
-                borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600
-              }}>
+            <div className="flex gap-2">
+              <Link href="/login" className="px-4 py-2 border-2 border-green-600 text-green-600 rounded-lg text-sm font-semibold hover:bg-green-50 transition">
                 Giriş Yap
               </Link>
-              <Link href="/kayit" style={{
-                padding: '8px 16px', background: '#16a34a', color: 'white',
-                borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600
-              }}>
+              <Link href="/kayit" className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition">
                 Kayıt Ol
               </Link>
             </div>
@@ -170,41 +159,35 @@ export default function AnaSayfa() {
       </div>
 
       {/* HERO */}
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h2 style={{ fontSize: 36, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>
-          Yakınındaki halı sahaları bul,<br />
-          <span style={{ color: '#16a34a' }}>müsait saatleri gör.</span>
+      <div className="text-center mb-10">
+        <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 leading-tight">
+          Yakınındaki halı sahaları bul,{' '}
+          <span className="text-green-600">müsait saatleri gör.</span>
         </h2>
-        <p style={{ color: '#6b7c6b', fontSize: 16, marginBottom: 24 }}>
+        <p className="text-gray-500 text-base mb-6">
           Sahayı bul, WhatsApp'tan rezervasyon yap. Oyuncu ara, takım bul.
         </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/harita" style={{
-            padding: '13px 28px', background: '#16a34a', color: 'white',
-            borderRadius: 8, textDecoration: 'none', fontSize: 16, fontWeight: 700
-          }}>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <Link href="/harita" className="px-6 py-3 bg-green-600 text-white rounded-lg text-base font-bold hover:bg-green-700 transition">
             🗺️ Haritada Ara
           </Link>
-          <Link href="/ilanlar" style={{
-            padding: '13px 28px', border: '1.5px solid #16a34a', color: '#16a34a',
-            borderRadius: 8, textDecoration: 'none', fontSize: 16, fontWeight: 700
-          }}>
+          <Link href="/ilanlar" className="px-6 py-3 border-2 border-green-600 text-green-600 rounded-lg text-base font-bold hover:bg-green-50 transition">
             📋 İlan Panosu
           </Link>
         </div>
       </div>
 
       {/* HARİTA WIDGET */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800 }}>
-            🏟️ İstanbul'da {sahalar.length} aktif saha
+      <div className="mb-10">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-base font-extrabold">
+            🏟️ İstanbul&apos;da {sahalar.length} aktif saha
           </h3>
-          <Link href="/harita" style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/harita" className="text-sm text-green-600 font-semibold hover:underline">
             Tümünü haritada gör →
           </Link>
         </div>
-        <div style={{ borderRadius: 16, overflow: 'hidden', border: '1.5px solid #dde8dd', height: 320 }}>
+        <div className="rounded-2xl overflow-hidden border border-green-100 h-64 sm:h-80">
           <APIProvider apiKey={apiKey}>
             <Map
               defaultCenter={ISTANBUL_MERKEZ}
@@ -220,18 +203,7 @@ export default function AnaSayfa() {
                   position={{ lat: saha.lat, lng: saha.lng }}
                   onClick={() => window.location.href = '/saha/' + saha.id}
                 >
-                  <div style={{
-                    background: '#16a34a',
-                    color: 'white',
-                    padding: '4px 8px',
-                    borderRadius: 16,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-                    border: '2px solid white',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}>
+                  <div className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md border-2 border-white cursor-pointer whitespace-nowrap">
                     🏟️ {saha.sahaAdi}
                   </div>
                 </AdvancedMarker>
@@ -243,39 +215,35 @@ export default function AnaSayfa() {
 
       {/* SON İLANLAR */}
       {ilanlar.length > 0 && (
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800 }}>📋 Son İlanlar</h3>
-            <Link href="/ilanlar" style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
+        <div className="mb-10">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-extrabold">📋 Son İlanlar</h3>
+            <Link href="/ilanlar" className="text-sm text-green-600 font-semibold hover:underline">
               Tümünü gör →
             </Link>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="flex flex-col gap-3">
             {ilanlar.map(ilan => (
-              <div key={ilan.id} style={{
-                background: 'white', border: '1.5px solid #dde8dd',
-                borderRadius: 12, padding: '14px 18px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
-                    <span style={{
-                      background: ilan.kategori === 'Oyuncu Arıyorum' ? '#dcfce7' : '#dbeafe',
-                      color: ilan.kategori === 'Oyuncu Arıyorum' ? '#166534' : '#1e40af',
-                      padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700
-                    }}>
+              <div key={ilan.id} className="bg-white border border-green-100 rounded-xl px-4 py-3 flex justify-between items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex gap-2 mb-2 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      ilan.kategori === 'Oyuncu Arıyorum'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
                       {ilan.kategori}
                     </span>
-                    <span style={{ background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs font-semibold">
                       📍 {ilan.ilce}
                     </span>
                   </div>
-                  <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{ilan.baslik}</p>
+                  <p className="text-sm font-bold truncate">{ilan.baslik}</p>
                   {ilan.tarih && (
-                    <p style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>🗓 {ilan.tarih} {ilan.saat}</p>
+                    <p className="text-xs text-green-600 font-semibold mt-0.5">🗓 {ilan.tarih} {ilan.saat}</p>
                   )}
                 </div>
-                <span style={{ fontSize: 11, color: '#aaa', flexShrink: 0, marginLeft: 12 }}>
+                <span className="text-xs text-gray-400 shrink-0">
                   ⏱ {kalanSure(ilan.silinmeZamani)}
                 </span>
               </div>
@@ -285,19 +253,16 @@ export default function AnaSayfa() {
       )}
 
       {/* ÖZELLİKLER */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { icon: '🗺️', baslik: 'Haritada Keşfet', aciklama: 'Çevrendeki sahaları harita üzerinde gör. Boş saatler yeşil, dolu saatler kırmızı.' },
           { icon: '📋', baslik: 'İlan Panosu', aciklama: 'Oyuncu ara veya takım bul. İlçene özel ilanları gör.' },
           { icon: '💬', baslik: 'WhatsApp ile Rezervasyon', aciklama: 'Tek tıkla sahaya yaz. Mesajın otomatik hazırlanır.' },
         ].map((item, i) => (
-          <div key={i} style={{
-            background: 'white', border: '1.5px solid #dde8dd',
-            borderRadius: 14, padding: 20
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{item.baslik}</div>
-            <div style={{ fontSize: 13, color: '#6b7c6b', lineHeight: 1.5 }}>{item.aciklama}</div>
+          <div key={i} className="bg-white border border-green-100 rounded-2xl p-5">
+            <div className="text-3xl mb-3">{item.icon}</div>
+            <div className="font-bold text-sm mb-1">{item.baslik}</div>
+            <div className="text-xs text-gray-500 leading-relaxed">{item.aciklama}</div>
           </div>
         ))}
       </div>
