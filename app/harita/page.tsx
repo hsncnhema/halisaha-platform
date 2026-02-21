@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 const ISTANBUL_MERKEZ = { lat: 41.0082, lng: 28.9784 };
 
-const ILCE_KOORDINATLARI = {
+const ILCE_KOORDINATLARI: Record<string, { lat: number; lng: number }> = {
   'Adalar': { lat: 40.8713, lng: 29.1253 },
   'Arnavutköy': { lat: 41.1853, lng: 28.7397 },
   'Ataşehir': { lat: 40.9833, lng: 29.1167 },
@@ -51,8 +51,8 @@ const ILCE_KOORDINATLARI = {
 };
 
 export default function HaritaPage() {
-  const [sahalar, setSahalar] = useState([]);
-  const [seciliSaha, setSeciliSaha] = useState(null);
+  const [sahalar, setSahalar] = useState<any[]>([]);
+  const [seciliSaha, setSeciliSaha] = useState<any>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [filtre, setFiltre] = useState({ format: '' });
 
@@ -61,8 +61,7 @@ export default function HaritaPage() {
       const q = query(collection(db, 'sahalar'), where('durum', '==', 'aktif'));
       const snap = await getDocs(q);
       const data = snap.docs.map(d => {
-        const saha = { id: d.id, ...d.data() };
-        // Koordinat yoksa ilçe koordinatını kullan
+        const saha: any = { id: d.id, ...d.data() };
         if (!saha.lat && saha.ilce && ILCE_KOORDINATLARI[saha.ilce]) {
           saha.lat = ILCE_KOORDINATLARI[saha.ilce].lat;
           saha.lng = ILCE_KOORDINATLARI[saha.ilce].lng;
@@ -77,7 +76,17 @@ export default function HaritaPage() {
 
   const bugunTarih = new Date().toISOString().split('T')[0];
 
-  const bosSlotSayisi = (saha) => {
+  const saatiDakika = (saat: string) => {
+    const p = saat.split(':');
+    return Number(p[0]) * 60 + Number(p[1]);
+  };
+
+  const dakikaSaat = (dakika: number) => {
+    const n = dakika % (24 * 60);
+    return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0');
+  };
+
+  const bosSlotSayisi = (saha: any) => {
     if (!saha.acilisSaati || !saha.kapanisSaati || !saha.slotSuresi) return null;
     const musaitlik = saha.musaitlik || {};
     let baslangic = saatiDakika(saha.acilisSaati);
@@ -86,24 +95,12 @@ export default function HaritaPage() {
     let bos = 0;
     let toplam = 0;
     while (baslangic + saha.slotSuresi <= bitis) {
-      const s = dakikaSaat(baslangic);
-      const b = dakikaSaat(baslangic + saha.slotSuresi);
-      const slot = s + '-' + b;
+      const slot = dakikaSaat(baslangic) + '-' + dakikaSaat(baslangic + saha.slotSuresi);
       toplam++;
       if ((musaitlik[bugunTarih + '_' + slot] || 'bos') === 'bos') bos++;
       baslangic += saha.slotSuresi;
     }
     return { bos, toplam };
-  };
-
-  const saatiDakika = (saat) => {
-    const p = saat.split(':');
-    return Number(p[0]) * 60 + Number(p[1]);
-  };
-
-  const dakikaSaat = (dakika) => {
-    const n = dakika % (24 * 60);
-    return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0');
   };
 
   const filtrelenmis = sahalar.filter(s => {
@@ -114,36 +111,44 @@ export default function HaritaPage() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="h-screen flex flex-col">
 
       {/* HEADER */}
-      <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #dde8dd', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link href="/" style={{ fontSize: 13, color: '#16a34a', textDecoration: 'none' }}>← Ana Sayfa</Link>
-          <h1 style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>🗺️ Halı Sahalar</h1>
-          <span style={{ fontSize: 12, color: '#6b7c6b' }}>{filtrelenmis.length} saha</span>
+      <div className="px-4 py-3 bg-white border-b border-gray-100 flex justify-between items-center z-10 shrink-0">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-sm text-green-600 hover:underline">← Ana Sayfa</Link>
+          <h1 className="text-base font-extrabold text-green-600">🗺️ Halı Sahalar</h1>
+          <span className="text-xs text-gray-400">{filtrelenmis.length} saha</span>
         </div>
-        <select
-          value={filtre.format}
-          onChange={e => setFiltre({ format: e.target.value })}
-          style={{ padding: '7px 12px', borderRadius: 8, border: '1.5px solid #dde8dd', fontSize: 13, background: 'white', cursor: 'pointer' }}
-        >
-          <option value="">Tüm Formatlar</option>
-          <option value="5v5">5v5</option>
-          <option value="6v6">6v6</option>
-          <option value="7v7">7v7</option>
-          <option value="8v8">8v8</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={filtre.format}
+            onChange={e => setFiltre({ format: e.target.value })}
+            className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm bg-white cursor-pointer focus:outline-none focus:border-green-400"
+          >
+            <option value="">Tüm Formatlar</option>
+            <option value="5v5">5v5</option>
+            <option value="6v6">6v6</option>
+            <option value="7v7">7v7</option>
+            <option value="8v8">8v8</option>
+          </select>
+          <Link
+            href="/sahalar"
+            className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition"
+          >
+            Liste Görünümü
+          </Link>
+        </div>
       </div>
 
       {/* HARİTA */}
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div className="flex-1 relative">
         {yukleniyor ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <p style={{ color: '#6b7c6b' }}>Yükleniyor...</p>
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            Yükleniyor...
           </div>
         ) : (
-          <APIProvider apiKey={apiKey}>
+          <APIProvider apiKey={apiKey ?? ''}>
             <Map
               defaultCenter={ISTANBUL_MERKEZ}
               defaultZoom={11}
@@ -161,18 +166,10 @@ export default function HaritaPage() {
                     position={{ lat: saha.lat, lng: saha.lng }}
                     onClick={() => setSeciliSaha(saha)}
                   >
-                    <div style={{
-                      background: bos ? '#16a34a' : '#dc2626',
-                      color: 'white',
-                      padding: '5px 10px',
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                      whiteSpace: 'nowrap',
-                      cursor: 'pointer',
-                      border: '2px solid white'
-                    }}>
+                    <div
+                      className="px-2.5 py-1 rounded-full text-xs font-bold text-white border-2 border-white shadow-md whitespace-nowrap cursor-pointer"
+                      style={{ background: bos ? '#16a34a' : '#dc2626' }}
+                    >
                       🏟️ {saha.sahaAdi}
                     </div>
                   </AdvancedMarker>
@@ -184,22 +181,23 @@ export default function HaritaPage() {
                   position={{ lat: seciliSaha.lat, lng: seciliSaha.lng }}
                   onCloseClick={() => setSeciliSaha(null)}
                 >
-                  <div style={{ padding: 8, minWidth: 200 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>🏟️ {seciliSaha.sahaAdi}</h3>
-                    {seciliSaha.ilce && <p style={{ fontSize: 12, color: '#6b7c6b', marginBottom: 4 }}>📍 {seciliSaha.ilce}</p>}
-                    {seciliSaha.format && <p style={{ fontSize: 12, marginBottom: 4 }}>⚽ {seciliSaha.format}</p>}
-                    {seciliSaha.fiyat && <p style={{ fontSize: 12, marginBottom: 8 }}>💰 {seciliSaha.fiyat} ₺ / saat</p>}
-                    <a
+                  <div className="p-2 min-w-48">
+                    <h3 className="text-sm font-extrabold mb-1.5">🏟️ {seciliSaha.sahaAdi}</h3>
+                    {seciliSaha.ilce && (
+                      <p className="text-xs text-gray-400 mb-1">📍 {[seciliSaha.il, seciliSaha.ilce].filter(Boolean).join(' / ')}</p>
+                    )}
+                    {seciliSaha.format && (
+                      <p className="text-xs mb-1">⚽ {seciliSaha.format}</p>
+                    )}
+                    {seciliSaha.fiyat && (
+                      <p className="text-xs mb-3">💰 {seciliSaha.fiyat} ₺ / saat</p>
+                    )}
+                    <Link
                       href={'/saha/' + seciliSaha.id}
-                      style={{
-                        display: 'block', padding: '7px 12px',
-                        background: '#16a34a', color: 'white',
-                        borderRadius: 8, textDecoration: 'none',
-                        fontSize: 12, fontWeight: 700, textAlign: 'center'
-                      }}
+                      className="block py-1.5 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg text-center transition"
                     >
                       Sahayı Gör →
-                    </a>
+                    </Link>
                   </div>
                 </InfoWindow>
               )}
@@ -207,7 +205,6 @@ export default function HaritaPage() {
           </APIProvider>
         )}
       </div>
-
     </div>
   );
 }

@@ -14,7 +14,7 @@ export default function KayitPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const kayitOl = async (uid, email, ad) => {
+  const kayitOl = async (uid: string, email: string | null, ad: string | null) => {
     await setDoc(doc(db, 'futbolcular', uid), {
       ad,
       email,
@@ -29,18 +29,18 @@ export default function KayitPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       await kayitOl(result.user.uid, result.user.email, result.user.displayName);
-    } catch (err) {
+    } catch {
       setError('Google ile kayıt başarısız.');
     }
   };
 
-  const emailIleKayit = async (e) => {
+  const emailIleKayit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ad) { setError('Adın zorunlu.'); return; }
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       await kayitOl(result.user.uid, email, ad);
-    } catch (err) {
+    } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') setError('Bu email zaten kayıtlı.');
       else if (err.code === 'auth/weak-password') setError('Şifre en az 6 karakter olmalı.');
       else setError('Kayıt başarısız, tekrar dene.');
@@ -48,60 +48,60 @@ export default function KayitPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '100px auto', padding: 24 }}>
-      <h1 style={{ marginBottom: 8, fontSize: 24, fontWeight: 700 }}>⚽ Futbolcu Kayıt</h1>
-      <p style={{ marginBottom: 24, color: '#6b7c6b', fontSize: 14 }}>
+    <div className="max-w-sm mx-auto px-4 pt-20 pb-16">
+      <h1 className="text-2xl font-extrabold mb-1">⚽ Futbolcu Kayıt</h1>
+      <p className="text-sm text-gray-400 mb-8">
         Zaten hesabın var mı?{' '}
-        <Link href="/login" style={{ color: '#16a34a', fontWeight: 600 }}>Giriş yap</Link>
+        <Link href="/login" className="text-green-600 font-semibold hover:underline">Giriş yap</Link>
       </p>
 
-      <button onClick={googleIleKayit} style={{
-        width: '100%', padding: 12, marginBottom: 24,
-        background: '#4285F4', color: 'white', border: 'none',
-        borderRadius: 8, cursor: 'pointer', fontSize: 16
-      }}>
+      <button
+        onClick={googleIleKayit}
+        className="w-full py-3 rounded-xl text-white font-bold text-sm mb-6 transition hover:opacity-90"
+        style={{ background: '#4285F4' }}
+      >
         Google ile Kayıt Ol
       </button>
 
-      <div style={{ textAlign: 'center', marginBottom: 24, color: '#aaa', fontSize: 13 }}>
-        ─── veya ───
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-xs text-gray-400">veya</span>
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
 
-      <form onSubmit={emailIleKayit}>
+      <form onSubmit={emailIleKayit} className="flex flex-col gap-3">
         <input
           type="text"
           placeholder="Adın Soyadın"
           value={ad}
           onChange={e => setAd(e.target.value)}
-          style={{ width: '100%', padding: 12, marginBottom: 12, borderRadius: 8, border: '1px solid #ddd', fontSize: 16, boxSizing: 'border-box' }}
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400"
         />
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          style={{ width: '100%', padding: 12, marginBottom: 12, borderRadius: 8, border: '1px solid #ddd', fontSize: 16, boxSizing: 'border-box' }}
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400"
         />
         <input
           type="password"
           placeholder="Şifre (en az 6 karakter)"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', padding: 12, marginBottom: 12, borderRadius: 8, border: '1px solid #ddd', fontSize: 16, boxSizing: 'border-box' }}
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400"
         />
-        {error && <p style={{ color: 'red', marginBottom: 12, fontSize: 14 }}>{error}</p>}
-        <button type="submit" style={{
-          width: '100%', padding: 12, background: '#16a34a', color: 'white',
-          border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 16
-        }}>
+        {error && <p className="text-red-500 text-xs">{error}</p>}
+        <button
+          type="submit"
+          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl transition"
+        >
           Kayıt Ol
         </button>
       </form>
 
-      <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #eee', textAlign: 'center' }}>
-        <Link href="/kayit/halisaha" style={{
-          fontSize: 13, color: '#16a34a', fontWeight: 600, textDecoration: 'none'
-        }}>
+      <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+        <Link href="/kayit/halisaha" className="text-sm text-green-600 font-semibold hover:underline">
           🏟️ Halı saha olarak kayıt ol →
         </Link>
       </div>

@@ -19,10 +19,16 @@ const ILCELER = [
   'Ümraniye', 'Üsküdar', 'Zeytinburnu'
 ];
 
+const kategoriRenk: Record<string, string> = {
+  'Oyuncu Arıyorum': 'bg-green-100 text-green-800',
+  'Takım Arıyorum': 'bg-blue-100 text-blue-800',
+  'Duyuru': 'bg-slate-100 text-slate-600',
+};
+
 export default function IlanlarPage() {
-  const [ilanlar, setIlanlar] = useState([]);
-  const [kullanici, setKullanici] = useState(null);
-  const [kullaniciTip, setKullaniciTip] = useState(null);
+  const [ilanlar, setIlanlar] = useState<any[]>([]);
+  const [kullanici, setKullanici] = useState<any>(null);
+  const [kullaniciTip, setKullaniciTip] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [formAcik, setFormAcik] = useState(false);
   const [filtre, setFiltre] = useState({ kategori: '', ilce: '' });
@@ -37,20 +43,14 @@ export default function IlanlarPage() {
   const [gonderiyor, setGonderiyor] = useState(false);
   const [error, setError] = useState('');
 
-  // Auth dinle ve kullanıcı tipini belirle
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setKullanici(user);
-        // Futbolcu mu saha mı kontrol et
         const futbolcuSnap = await getDocs(
           query(collection(db, 'futbolcular'), where('__name__', '==', user.uid))
         );
-        if (!futbolcuSnap.empty) {
-          setKullaniciTip('futbolcu');
-        } else {
-          setKullaniciTip('saha');
-        }
+        setKullaniciTip(futbolcuSnap.empty ? 'saha' : 'futbolcu');
       } else {
         setKullanici(null);
         setKullaniciTip(null);
@@ -59,7 +59,6 @@ export default function IlanlarPage() {
     return () => unsub();
   }, []);
 
-  // İlanları dinle
   useEffect(() => {
     const simdi = Timestamp.now();
     const q = query(
@@ -68,14 +67,13 @@ export default function IlanlarPage() {
       orderBy('silinmeZamani', 'desc')
     );
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setIlanlar(data);
+      setIlanlar(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setYukleniyor(false);
     });
     return () => unsub();
   }, []);
 
-  const ilanAc = async (e) => {
+  const ilanAc = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.ilce || !form.baslik || !form.aciklama) {
       setError('Tüm zorunlu alanları doldur.');
@@ -83,20 +81,17 @@ export default function IlanlarPage() {
     }
     setGonderiyor(true);
     try {
-      const silinmeZamani = Timestamp.fromDate(
-        new Date(Date.now() + 24 * 60 * 60 * 1000)
-      );
       await addDoc(collection(db, 'ilanlar'), {
         ...form,
         uid: kullanici.uid,
         acanTip: kullaniciTip,
-        silinmeZamani,
+        silinmeZamani: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)),
         olusturulma: Timestamp.now(),
       });
       setFormAcik(false);
       setForm({ kategori: 'Oyuncu Arıyorum', ilce: '', baslik: '', aciklama: '', tarih: '', saat: '' });
       setError('');
-    } catch (err) {
+    } catch {
       setError('İlan açılamadı, tekrar dene.');
     }
     setGonderiyor(false);
@@ -108,7 +103,7 @@ export default function IlanlarPage() {
     return true;
   });
 
-  const kalanSure = (silinmeZamani) => {
+  const kalanSure = (silinmeZamani: any) => {
     const fark = silinmeZamani.toDate() - new Date();
     const saat = Math.floor(fark / (1000 * 60 * 60));
     const dakika = Math.floor((fark % (1000 * 60 * 60)) / (1000 * 60));
@@ -117,54 +112,55 @@ export default function IlanlarPage() {
     return `${saat}sa ${dakika}dk kaldı`;
   };
 
-  const inputStyle = {
-    width: '100%', padding: 10, borderRadius: 8,
-    border: '1px solid #ddd', fontSize: 14,
-    boxSizing: 'border-box', background: 'white', marginBottom: 10
-  };
-
   return (
-    <div style={{ maxWidth: 680, margin: '60px auto', padding: 24 }}>
+    <div className="max-w-2xl mx-auto px-4 pb-16 pt-6">
 
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <Link href="/" style={{ fontSize: 13, color: '#16a34a', textDecoration: 'none' }}>← Ana Sayfa</Link>
-          <h1 style={{ fontSize: 22, fontWeight: 800, marginTop: 6 }}>📋 İlan Panosu</h1>
+          <Link href="/" className="text-sm text-green-600 hover:underline">← Ana Sayfa</Link>
+          <h1 className="text-2xl font-extrabold mt-1">📋 İlan Panosu</h1>
         </div>
         {kullanici ? (
-          <button onClick={() => setFormAcik(!formAcik)} style={{
-            padding: '10px 20px', background: '#16a34a', color: 'white',
-            border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700
-          }}>
+          <button
+            onClick={() => setFormAcik(!formAcik)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+              formAcik
+                ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+          >
             {formAcik ? 'İptal' : '+ İlan Aç'}
           </button>
         ) : (
-          <Link href="/login" style={{
-            padding: '10px 20px', background: '#16a34a', color: 'white',
-            borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 700
-          }}>
-            İlan açmak için giriş yap
+          <Link
+            href="/login"
+            className="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition"
+          >
+            Giriş Yap
           </Link>
         )}
       </div>
 
       {/* İLAN FORMU */}
       {formAcik && (
-        <div style={{
-          background: 'white', border: '1.5px solid #86efac',
-          borderRadius: 14, padding: 24, marginBottom: 24
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Yeni İlan</h3>
-          <form onSubmit={ilanAc}>
-            <select value={form.kategori} onChange={e => setForm({ ...form, kategori: e.target.value })} style={inputStyle}>
+        <div className="bg-white border border-green-200 rounded-2xl p-5 mb-5">
+          <h3 className="text-base font-bold mb-4">Yeni İlan</h3>
+          <form onSubmit={ilanAc} className="flex flex-col gap-3">
+            <select
+              value={form.kategori}
+              onChange={e => setForm({ ...form, kategori: e.target.value })}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400 bg-white"
+            >
               <option value="Oyuncu Arıyorum">Oyuncu Arıyorum</option>
               <option value="Takım Arıyorum">Takım Arıyorum</option>
-              {kullaniciTip === 'saha' && (
-                <option value="Duyuru">Duyuru</option>
-              )}
+              {kullaniciTip === 'saha' && <option value="Duyuru">Duyuru</option>}
             </select>
-            <select value={form.ilce} onChange={e => setForm({ ...form, ilce: e.target.value })} style={inputStyle}>
+            <select
+              value={form.ilce}
+              onChange={e => setForm({ ...form, ilce: e.target.value })}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400 bg-white"
+            >
               <option value="">İlçe seç *</option>
               {ILCELER.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
@@ -173,37 +169,35 @@ export default function IlanlarPage() {
               placeholder="Başlık *"
               value={form.baslik}
               onChange={e => setForm({ ...form, baslik: e.target.value })}
-              style={inputStyle}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400"
             />
             <textarea
               placeholder="Açıklama * (format, seviye, iletişim bilgisi...)"
               value={form.aciklama}
               onChange={e => setForm({ ...form, aciklama: e.target.value })}
               rows={3}
-              style={{ ...inputStyle, resize: 'vertical' }}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400 resize-y"
             />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="grid grid-cols-2 gap-3">
               <input
                 type="date"
                 value={form.tarih}
                 onChange={e => setForm({ ...form, tarih: e.target.value })}
-                style={{ ...inputStyle, marginBottom: 0 }}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400"
               />
               <input
                 type="time"
                 value={form.saat}
                 onChange={e => setForm({ ...form, saat: e.target.value })}
-                style={{ ...inputStyle, marginBottom: 0 }}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-400"
               />
             </div>
-            {error && <p style={{ color: 'red', fontSize: 13, marginTop: 8 }}>{error}</p>}
-            <button type="submit" disabled={gonderiyor} style={{
-              width: '100%', padding: 12, marginTop: 12,
-              background: gonderiyor ? '#aaa' : '#16a34a',
-              color: 'white', border: 'none', borderRadius: 8,
-              cursor: gonderiyor ? 'not-allowed' : 'pointer',
-              fontSize: 15, fontWeight: 700
-            }}>
+            {error && <p className="text-red-500 text-xs">{error}</p>}
+            <button
+              type="submit"
+              disabled={gonderiyor}
+              className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold text-sm rounded-xl transition"
+            >
               {gonderiyor ? 'Gönderiliyor...' : 'İlan Yayınla'}
             </button>
           </form>
@@ -211,11 +205,11 @@ export default function IlanlarPage() {
       )}
 
       {/* FİLTRE */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className="flex gap-2 mb-5 flex-wrap">
         <select
           value={filtre.kategori}
           onChange={e => setFiltre({ ...filtre, kategori: e.target.value })}
-          style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #dde8dd', fontSize: 13, background: 'white' }}
+          className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white cursor-pointer focus:outline-none focus:border-green-400"
         >
           <option value="">Tüm Kategoriler</option>
           <option value="Oyuncu Arıyorum">Oyuncu Arıyorum</option>
@@ -225,61 +219,54 @@ export default function IlanlarPage() {
         <select
           value={filtre.ilce}
           onChange={e => setFiltre({ ...filtre, ilce: e.target.value })}
-          style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #dde8dd', fontSize: 13, background: 'white' }}
+          className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white cursor-pointer focus:outline-none focus:border-green-400"
         >
           <option value="">Tüm İlçeler</option>
           {ILCELER.map(i => <option key={i} value={i}>{i}</option>)}
         </select>
+        {(filtre.kategori || filtre.ilce) && (
+          <button
+            onClick={() => setFiltre({ kategori: '', ilce: '' })}
+            className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition"
+          >
+            Temizle ✕
+          </button>
+        )}
       </div>
 
       {/* İLAN LİSTESİ */}
       {yukleniyor ? (
-        <p style={{ textAlign: 'center', color: '#6b7c6b' }}>Yükleniyor...</p>
+        <div className="text-center py-16 text-gray-400 text-sm">Yükleniyor...</div>
       ) : filtrelenmis.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: 48,
-          background: 'white', borderRadius: 14,
-          border: '1.5px solid #dde8dd', color: '#6b7c6b'
-        }}>
-          <p style={{ fontSize: 32, marginBottom: 12 }}>📋</p>
-          <p style={{ fontWeight: 600 }}>Henüz ilan yok</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>İlk ilanı sen aç!</p>
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <p className="text-4xl mb-3">📋</p>
+          <p className="font-bold text-gray-700">Henüz ilan yok</p>
+          <p className="text-sm text-gray-400 mt-1">İlk ilanı sen aç!</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {filtrelenmis.map(ilan => (
-            <div key={ilan.id} style={{
-              background: 'white', border: '1.5px solid #dde8dd',
-              borderRadius: 12, padding: 18
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{
-                    background: ilan.kategori === 'Oyuncu Arıyorum' ? '#dcfce7' : ilan.kategori === 'Takım Arıyorum' ? '#dbeafe' : '#f1f5f9',
-                    color: ilan.kategori === 'Oyuncu Arıyorum' ? '#166534' : ilan.kategori === 'Takım Arıyorum' ? '#1e40af' : '#475569',
-                    padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700
-                  }}>
+            <div key={ilan.id} className="bg-white border border-gray-100 rounded-2xl p-4 hover:border-green-200 transition">
+              <div className="flex justify-between items-start gap-3 mb-2">
+                <div className="flex gap-2 flex-wrap">
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${kategoriRenk[ilan.kategori] || 'bg-slate-100 text-slate-600'}`}>
                     {ilan.kategori}
                   </span>
-                  <span style={{ background: '#f1f5f9', color: '#475569', padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">
                     📍 {ilan.ilce}
                   </span>
                   {ilan.acanTip === 'saha' && (
-                    <span style={{ background: '#fef9c3', color: '#713f12', padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
                       🏟️ Saha
                     </span>
                   )}
                 </div>
-                <span style={{ fontSize: 11, color: '#aaa', flexShrink: 0 }}>
-                  ⏱ {kalanSure(ilan.silinmeZamani)}
-                </span>
+                <span className="text-xs text-gray-400 shrink-0">⏱ {kalanSure(ilan.silinmeZamani)}</span>
               </div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>{ilan.baslik}</h3>
-              <p style={{ fontSize: 13, color: '#6b7c6b', lineHeight: 1.5, marginBottom: 8 }}>{ilan.aciklama}</p>
+              <h3 className="text-sm font-bold mb-1">{ilan.baslik}</h3>
+              <p className="text-xs text-gray-500 leading-relaxed mb-2">{ilan.aciklama}</p>
               {(ilan.tarih || ilan.saat) && (
-                <p style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>
-                  🗓 {ilan.tarih} {ilan.saat}
-                </p>
+                <p className="text-xs text-green-600 font-semibold">🗓 {ilan.tarih} {ilan.saat}</p>
               )}
             </div>
           ))}
