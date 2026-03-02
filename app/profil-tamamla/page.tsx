@@ -44,12 +44,37 @@ export default function ProfilTamamlaPage() {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
+      console.log('supabase.auth.getUser error:', userError);
       setError('Önce giriş yapman gerekiyor.');
       setYukleniyor(false);
       return;
     }
 
-    await supabase
+    const { data: updatedProfile, error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        tip: 'futbolcu',
+        ad: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Kullanıcı',
+      })
+      .eq('id', user.id)
+      .select('id')
+      .maybeSingle();
+
+    if (profileError) {
+      console.log('profiles update error:', profileError);
+      setError('Profil bilgileri kaydedilemedi, tekrar dene.');
+      setYukleniyor(false);
+      return;
+    }
+
+    if (!updatedProfile) {
+      console.log('profiles update returned no row for user:', user.id);
+      setError('Profil kaydı bulunamadı. Lütfen tekrar giriş yapıp dene.');
+      setYukleniyor(false);
+      return;
+    }
+
+    const { error: futbolcuError } = await supabase
       .from('futbolcular')
       .upsert(
         {
@@ -66,14 +91,12 @@ export default function ProfilTamamlaPage() {
         { onConflict: 'user_id' }
       );
 
-    await supabase.from('profiles').upsert(
-      {
-        id: user.id,
-        tip: 'futbolcu',
-        ad: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Kullanıcı',
-      },
-      { onConflict: 'id' }
-    );
+    if (futbolcuError) {
+      console.log('futbolcular upsert error:', futbolcuError);
+      setError('Profil bilgileri kaydedilemedi, tekrar dene.');
+      setYukleniyor(false);
+      return;
+    }
 
     router.push('/');
     router.refresh();
