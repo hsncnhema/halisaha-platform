@@ -54,7 +54,8 @@ halisaha-platform/
 ├── middleware.ts                    # Auth middleware (session yönetimi)
 ├── supabase/
 │   └── migrations/
-│       └── 001_initial.sql          # DB şeması & RLS politikaları
+│       ├── 001_initial.sql          # DB şeması & RLS politikaları
+│       └── ...                      # Ek migration dosyaları
 ├── public/                          # Statik dosyalar
 ├── .env.local                       # Ortam değişkenleri (commit edilmez)
 ├── next.config.ts
@@ -85,7 +86,6 @@ halisaha-platform/
 | Admin | `/admin` | Tamamlandı | Saha onaylama, ilan yönetimi, istatistikler, manuel saha ekleme |
 | Auth Callback | `/auth/callback` | Tamamlandı | Google OAuth code → session exchange |
 
-**Bilinen sorun:** Google OAuth sonrası yönlendirme düzgün çalışmıyor (Codex düzeltiyor).
 
 ---
 
@@ -127,7 +127,7 @@ fiyat          integer
 slot_suresi    integer  -- 60 | 90 dakika
 acilis_saati   text     -- HH:MM
 kapanis_saati  text     -- HH:MM
-durum          text DEFAULT 'beklemede'  -- beklemede | aktif | pasif
+durum          text DEFAULT 'beklemede'  -- beklemede | aktif | pasif | reddedildi
 kurallar       text
 created_at, updated_at timestamptz
 ```
@@ -182,6 +182,14 @@ olusturulma timestamptz
 ```
 
 **RLS:** Tüm tablolarda Row-Level Security aktif. `is_admin(uuid)` fonksiyonu ile admin bypass.
+
+### Saha Onay Akışı
+```
+Kayıt → beklemede → (Admin onayı) → aktif
+                  → (Admin reddi)  → reddedildi
+                  → (Deaktif)      → pasif
+```
+Admin panelinden sahalar onaylanır/reddedilir. Durum değişiklikleri RLS politikalarıyla korunur.
 
 ---
 
@@ -293,9 +301,17 @@ npm run lint     # ESLint kontrolü
 
 ---
 
+## Tamamlanan Özellikler
+
+- [x] Supabase migration (Firebase tamamen kaldırıldı)
+- [x] Tüm sayfalar Tailwind CSS'e geçirildi
+- [x] Admin onay sistemi (saha onay/red/deaktif akışı)
+- [x] Saha kayıt akışı Supabase'e taşındı (`beklemede → aktif | reddedildi`)
+- [x] Google OAuth yönlendirme sorunu düzeltildi
+
 ## Eksik / Planlanan Özellikler
 
-- [ ] Google OAuth yönlendirme sorunu (aktif olarak düzeltiliyor)
+- [ ] Saha kayıt formunda ilçe dropdown'dan lat/lng otomatik atanması
 - [ ] Turnuva sayfaları (DB tabloları hazır, UI yok)
 - [ ] Google Geocoding (şu an ilçe merkezi kullanılıyor)
 - [ ] Ödeme sistemi (İyzico/Stripe)
