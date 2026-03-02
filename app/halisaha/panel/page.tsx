@@ -341,8 +341,20 @@ export default function HalisahaPanelPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="mb-0.5 text-xl font-extrabold">🏟️ {saha.sahaAdi}</h1>
-          <p className={`text-xs font-bold ${saha.durum === 'aktif' ? 'text-green-600' : 'text-amber-500'}`}>
-            {saha.durum === 'aktif' ? '✅ Yayında' : '🕐 Onay Bekliyor'}
+          <p
+            className={`text-xs font-bold ${
+              saha.durum === 'aktif'
+                ? 'text-green-600'
+                : saha.durum === 'reddedildi'
+                  ? 'text-red-600'
+                  : 'text-amber-500'
+            }`}
+          >
+            {saha.durum === 'aktif'
+              ? '✅ Yayinda'
+              : saha.durum === 'reddedildi'
+                ? '❌ Basvuru Reddedildi'
+                : '🕐 Onay Bekliyor'}
           </p>
         </div>
         <button
