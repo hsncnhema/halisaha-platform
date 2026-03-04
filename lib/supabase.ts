@@ -4,14 +4,29 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    flowType: 'pkce',
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+let _supabase: ReturnType<typeof createBrowserClient> | null = null;
+
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createBrowserClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder', {
+      auth: {
+        flowType: 'pkce',
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
+  }
+  return _supabase;
+}
+
+export const supabase = typeof window !== 'undefined'
+  ? getSupabase()
+  : new Proxy({} as ReturnType<typeof createBrowserClient>, {
+      get(_target, prop) {
+        return getSupabase()[prop as keyof ReturnType<typeof createBrowserClient>];
+      },
+    });
 
 type MusaitlikDurumu = 'bos' | 'dolu';
 
