@@ -4,7 +4,7 @@ import { getIlanlar, supabase } from '@/lib/supabase';
 import { ILCELER, ILLER } from '@/lib/turkiye';
 import type { User } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const kategoriRenk: Record<string, string> = {
   'Oyuncu Arıyorum': 'bg-green-900/60 text-green-300',
@@ -15,6 +15,7 @@ const kategoriRenk: Record<string, string> = {
 type IlanItem = Awaited<ReturnType<typeof getIlanlar>>[number];
 
 export default function IlanlarPage() {
+  const router = useRouter();
   const [ilanlar, setIlanlar] = useState<IlanItem[]>([]);
   const [kullanici, setKullanici] = useState<User | null>(null);
   const [kullaniciTip, setKullaniciTip] = useState<string | null>(null);
@@ -27,8 +28,6 @@ export default function IlanlarPage() {
     ilce: '',
     baslik: '',
     aciklama: '',
-    tarih: '',
-    saat: '',
   });
   const [gonderiyor, setGonderiyor] = useState(false);
   const [error, setError] = useState('');
@@ -113,8 +112,6 @@ export default function IlanlarPage() {
       il: form.il,
       baslik: form.baslik,
       aciklama: form.aciklama,
-      tarih: form.tarih || null,
-      saat: form.saat || null,
       silinme_zamani: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     });
 
@@ -125,9 +122,17 @@ export default function IlanlarPage() {
     }
 
     setFormAcik(false);
-    setForm({ kategori: 'Oyuncu Arıyorum', il: '', ilce: '', baslik: '', aciklama: '', tarih: '', saat: '' });
+    setForm({ kategori: 'Oyuncu Arıyorum', il: '', ilce: '', baslik: '', aciklama: '' });
     await ilanlariYukle();
     setGonderiyor(false);
+  };
+
+  const handleIlanAc = () => {
+    if (!kullanici) {
+      router.push('/login');
+      return;
+    }
+    setFormAcik(true);
   };
 
   const formIlceler = form.il ? ILCELER(form.il) : [];
@@ -153,25 +158,16 @@ export default function IlanlarPage() {
     <div className="min-h-screen bg-green-950 mx-auto max-w-2xl px-4 pb-16 pt-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/" className="text-sm text-green-400 hover:underline">
-            ← Ana Sayfa
-          </Link>
           <h1 className="mt-1 text-2xl font-extrabold text-white">📋 İlan Panosu</h1>
         </div>
-        {kullanici ? (
-          <button
-            onClick={() => setFormAcik(!formAcik)}
-            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-              formAcik ? 'bg-white/10 text-white/60 hover:bg-white/20' : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-          >
-            {formAcik ? 'İptal' : '+ İlan Aç'}
-          </button>
-        ) : (
-          <Link href="/login" className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700">
-            Giriş Yap
-          </Link>
-        )}
+        <button
+          onClick={handleIlanAc}
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+            formAcik ? 'bg-white/10 text-white/60 hover:bg-white/20' : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          {formAcik ? 'İptal' : '+ İlan Aç'}
+        </button>
       </div>
 
       {formAcik && (
@@ -226,20 +222,6 @@ export default function IlanlarPage() {
               rows={3}
               className="w-full resize-y rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
             />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                value={form.tarih}
-                onChange={(e) => setForm({ ...form, tarih: e.target.value })}
-                className="w-full rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
-              />
-              <input
-                type="time"
-                value={form.saat}
-                onChange={(e) => setForm({ ...form, saat: e.target.value })}
-                className="w-full rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
-              />
-            </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
             <button
               type="submit"

@@ -1,32 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-type KullaniciTipi = 'futbolcu' | 'saha' | 'admin' | null;
-
-type NavLink = {
-  href: string;
-  label: string;
+type KullaniciBilgisi = {
+  ad: string | null;
+  email: string | null;
 };
 
-const defaultLinks: NavLink[] = [
-  { href: '/', label: 'Ana Sayfa' },
-  { href: '/sahalar', label: 'Sahalar' },
-  { href: '/harita', label: 'Harita' },
-  { href: '/ilanlar', label: 'Ilanlar' },
-];
+const bosKullanici: KullaniciBilgisi = {
+  ad: null,
+  email: null,
+};
 
-const futbolcuLinks: NavLink[] = [...defaultLinks, { href: '/profil', label: 'Profil' }];
-const sahaLinks: NavLink[] = [{ href: '/halisaha/panel', label: 'Panel' }];
-const adminLinks: NavLink[] = [...futbolcuLinks, { href: '/admin', label: 'Admin' }];
+const getInitials = (ad: string | null, email: string | null) => {
+  const kaynak = (ad || email?.split('@')[0] || 'SG').trim();
+  if (!kaynak) return 'SG';
+  const parcali = kaynak.split(/\s+/).filter(Boolean);
+  if (parcali.length >= 2) return `${parcali[0][0]}${parcali[1][0]}`.toUpperCase();
+  return kaynak.slice(0, 2).toUpperCase();
+};
 
 export default function AppNavbar() {
-  const pathname = usePathname();
-  const [tip, setTip] = useState<KullaniciTipi>(null);
-  const [girisYapti, setGirisYapti] = useState(false);
+  const [kullanici, setKullanici] = useState<KullaniciBilgisi>(bosKullanici);
 
   useEffect(() => {
     let aktif = true;
@@ -37,23 +34,22 @@ export default function AppNavbar() {
       } = await supabase.auth.getUser();
 
       if (!aktif) return;
-
       if (!user) {
-        setGirisYapti(false);
-        setTip(null);
+        setKullanici(bosKullanici);
         return;
       }
 
-      setGirisYapti(true);
-
       const { data: profile } = await supabase
         .from('profiles')
-        .select('tip')
+        .select('ad')
         .eq('id', user.id)
         .maybeSingle();
 
       if (!aktif) return;
-      setTip((profile?.tip as KullaniciTipi) ?? 'futbolcu');
+      setKullanici({
+        ad: profile?.ad ?? null,
+        email: user.email ?? null,
+      });
     };
 
     const {
@@ -70,44 +66,28 @@ export default function AppNavbar() {
     };
   }, []);
 
-  const links = useMemo(() => {
-    if (tip === 'saha') return sahaLinks;
-    if (tip === 'admin') return adminLinks;
-    if (tip === 'futbolcu') return futbolcuLinks;
-    return defaultLinks;
-  }, [tip]);
+  const initials = useMemo(() => getInitials(kullanici.ad, kullanici.email), [kullanici.ad, kullanici.email]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-green-950/90 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-h-14 w-full max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <span className="text-green-400 font-black text-xl">saha</span>
-          <span className="text-white font-black text-xl">gram</span>
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-green-950/90 backdrop-blur-md md:hidden">
+      <div className="mx-auto flex h-14 max-h-14 items-center justify-between px-4">
+        <Link href="/" className="inline-flex items-center">
+          <span className="text-xl font-black text-green-400">saha</span>
+          <span className="text-xl font-black text-white">gram</span>
         </Link>
-        <nav className="flex items-center gap-3">
-          {links.map((link) => {
-            const aktif = pathname === link.href || pathname.startsWith(`${link.href}/`);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-semibold transition ${
-                  aktif ? 'text-white' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-          {!girisYapti && (
-            <Link
-              href="/login"
-              className="rounded-md border border-green-400 px-2.5 py-1 text-xs font-bold text-green-400 transition hover:bg-green-400/10"
-            >
-              Giris
-            </Link>
-          )}
-        </nav>
+
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 text-xs font-bold text-white">
+            {initials}
+          </div>
+          <button
+            type="button"
+            aria-label="Menu"
+            className="text-xl font-bold text-white/70 transition hover:text-white"
+          >
+            {'\u2630'}
+          </button>
+        </div>
       </div>
     </header>
   );

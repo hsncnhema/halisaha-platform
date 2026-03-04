@@ -1,19 +1,9 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
+import { ILCELER, ILLER } from '@/lib/turkiye';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-
-const ILCELER = [
-  'Adalar', 'Arnavutköy', 'Ataşehir', 'Avcılar', 'Bağcılar', 'Bahçelievler',
-  'Bakırköy', 'Başakşehir', 'Bayrampaşa', 'Beşiktaş', 'Beykoz', 'Beylikdüzü',
-  'Beyoğlu', 'Büyükçekmece', 'Çatalca', 'Çekmeköy', 'Esenler', 'Esenyurt',
-  'Eyüpsultan', 'Fatih', 'Gaziosmanpaşa', 'Güngören', 'Kadıköy', 'Kağıthane',
-  'Kartal', 'Küçükçekmece', 'Maltepe', 'Pendik', 'Sancaktepe', 'Sarıyer',
-  'Silivri', 'Sultanbeyli', 'Sultangazi', 'Şile', 'Şişli', 'Tuzla',
-  'Ümraniye', 'Üsküdar', 'Zeytinburnu',
-];
 
 const selectClass =
   'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
@@ -27,6 +17,7 @@ type ProfilForm = {
   mevki: string;
   baskinAyak: string;
   seviye: string;
+  il: string;
   ilce: string;
   yasAraligi: string;
   bio: string;
@@ -39,6 +30,7 @@ const bosForm: ProfilForm = {
   mevki: '',
   baskinAyak: '',
   seviye: '',
+  il: '',
   ilce: '',
   yasAraligi: '',
   bio: '',
@@ -52,6 +44,7 @@ export default function ProfilPage() {
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [basari, setBasari] = useState(false);
   const router = useRouter();
+  const ilceler = form.il ? ILCELER(form.il) : [];
 
   useEffect(() => {
     const yukle = async () => {
@@ -68,7 +61,7 @@ export default function ProfilPage() {
         supabase.from('profiles').select('ad').eq('id', user.id).maybeSingle(),
         supabase
           .from('futbolcular')
-          .select('mevki, baskin_ayak, seviye, ilce, yas_araligi, bio')
+          .select('mevki, baskin_ayak, seviye, il, ilce, yas_araligi, bio')
           .eq('user_id', user.id)
           .maybeSingle(),
       ]);
@@ -80,6 +73,7 @@ export default function ProfilPage() {
         mevki: futbolcuRes.data?.mevki || '',
         baskinAyak: futbolcuRes.data?.baskin_ayak || '',
         seviye: futbolcuRes.data?.seviye || '',
+        il: futbolcuRes.data?.il || '',
         ilce: futbolcuRes.data?.ilce || '',
         yasAraligi: futbolcuRes.data?.yas_araligi || '',
         bio: futbolcuRes.data?.bio || '',
@@ -104,8 +98,8 @@ export default function ProfilPage() {
           mevki: form.mevki || null,
           baskin_ayak: form.baskinAyak || null,
           seviye: form.seviye || null,
+          il: form.il || null,
           ilce: form.ilce || null,
-          il: 'İstanbul',
           yas_araligi: form.yasAraligi || null,
           bio: form.bio || null,
         },
@@ -139,9 +133,6 @@ export default function ProfilPage() {
   return (
     <div className="mx-auto min-h-screen max-w-xl bg-green-950 px-4 pb-16 pt-6">
       <div className="mb-8 flex items-center justify-between">
-        <Link href="/" className="text-sm text-green-400 hover:underline">
-          ← Ana Sayfa
-        </Link>
         <button
           onClick={cikisYap}
           className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 transition hover:bg-white/10"
@@ -169,23 +160,7 @@ export default function ProfilPage() {
       )}
 
       <div className="mb-4 flex justify-end">
-        {duzenle ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => setDuzenle(false)}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 transition hover:bg-white/10"
-            >
-              İptal
-            </button>
-            <button
-              onClick={kaydet}
-              disabled={kaydediliyor}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-white/10 disabled:text-white/30"
-            >
-              {kaydediliyor ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
-          </div>
-        ) : (
+        {!duzenle && (
           <button
             onClick={() => setDuzenle(true)}
             className="rounded-lg border border-green-500 bg-white/5 px-4 py-2 text-sm font-semibold text-green-400 transition hover:bg-white/10"
@@ -231,10 +206,30 @@ export default function ProfilPage() {
             </select>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Il</label>
+            <select
+              value={form.il}
+              onChange={(e) => setForm({ ...form, il: e.target.value, ilce: '' })}
+              className={selectClass}
+            >
+              <option value="">Sec</option>
+              {ILLER.map((sehir) => (
+                <option key={sehir} value={sehir}>
+                  {sehir}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">İlçe</label>
-            <select value={form.ilce} onChange={(e) => setForm({ ...form, ilce: e.target.value })} className={selectClass}>
+            <select
+              value={form.ilce}
+              onChange={(e) => setForm({ ...form, ilce: e.target.value })}
+              disabled={!form.il}
+              className={selectClass}
+            >
               <option value="">Seç</option>
-              {ILCELER.map((i) => (
+              {ilceler.map((i) => (
                 <option key={i} value={i}>
                   {i}
                 </option>
@@ -259,6 +254,21 @@ export default function ProfilPage() {
               className="w-full resize-y rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none"
             />
             <p className="mt-1 text-right text-xs text-white/20">{form.bio.length}/160</p>
+          </div>
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              onClick={() => setDuzenle(false)}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 transition hover:bg-white/10"
+            >
+              İptal
+            </button>
+            <button
+              onClick={kaydet}
+              disabled={kaydediliyor}
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-white/10 disabled:text-white/30"
+            >
+              {kaydediliyor ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
           </div>
         </div>
       ) : (

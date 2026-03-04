@@ -128,11 +128,16 @@ export default function AnaSayfa() {
           const data = (await res.json()) as GeocodeResponse;
           const components = data.results?.[0]?.address_components || [];
 
-          const ilce = components.find(
-            (c) =>
-              c.types.includes('administrative_area_level_4') ||
+          const ilce =
+            components.find((c: any) =>
+              c.types.includes('administrative_area_level_2')
+            )?.long_name ||
+            components.find((c: any) =>
               c.types.includes('administrative_area_level_3')
-          )?.long_name;
+            )?.long_name ||
+            components.find((c: any) =>
+              c.types.includes('administrative_area_level_4')
+            )?.long_name;
 
           if (ilce) setKullaniciIlce(ilce);
         } catch (error) {
@@ -276,7 +281,7 @@ export default function AnaSayfa() {
           </div>
           <div className="mb-8 h-64 overflow-hidden rounded-2xl border border-white/10 sm:h-80">
             <APIProvider apiKey={apiKey ?? ''}>
-              <Map key={`${haritaMerkez.lat}-${haritaMerkez.lng}`} defaultCenter={haritaMerkez} defaultZoom={13} mapId="halisaha-mini-map" style={{ width: '100%', height: '100%' }} gestureHandling="cooperative" disableDefaultUI>
+              <Map key={`${haritaMerkez.lat}-${haritaMerkez.lng}`} center={haritaMerkez} defaultZoom={13} mapId="halisaha-mini-map" style={{ width: '100%', height: '100%' }} gestureHandling="cooperative" disableDefaultUI>
                 {sahalar.map((saha) => (
                   <AdvancedMarker key={saha.id} position={{ lat: saha.lat as number, lng: saha.lng as number }} onClick={() => { window.location.href = `/saha/${saha.id}`; }}>
                     <div className="cursor-pointer whitespace-nowrap rounded-full border-2 border-white bg-green-600 px-2 py-1 text-xs font-bold text-white shadow-md">
@@ -319,7 +324,9 @@ export default function AnaSayfa() {
             <div className="mb-7 flex items-center justify-between">
               <div className="flex items-center">
                 <div className="mr-3 h-8 w-1 bg-green-400" />
-                <h2 className="animate-glow text-2xl font-black text-white">{ilceBaslikMetni(kullaniciIlce)}</h2>
+                <h2 className="text-2xl font-black text-white animate-glow">
+                  {kullaniciIlce ? kullaniciIlce + " Öne Çıkan İlanlar" : "Öne Çıkan İlanlar"}
+                </h2>
               </div>
               <Link href="/ilanlar" className="text-sm font-semibold text-green-400 hover:underline">
                 Tümünü gör &rarr;
@@ -351,9 +358,6 @@ export default function AnaSayfa() {
                             }`}
                           >
                             {ilan.kategori}
-                          </span>
-                          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/60">
-                            Ilce: {ilan.ilce?.toLocaleUpperCase('tr-TR')}
                           </span>
                         </div>
                         <span className="shrink-0 text-xs text-white/30">Sure: {kalanSure(ilan.silinmeZamani)}</span>

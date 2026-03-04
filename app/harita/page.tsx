@@ -75,9 +75,6 @@ export default function HaritaPage() {
     <div className="flex h-screen flex-col">
       <div className="z-10 flex shrink-0 items-center justify-between border-b border-white/10 bg-green-950 px-4 py-3">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-sm text-green-400 hover:underline">
-            ← Ana Sayfa
-          </Link>
           <h1 className="text-base font-extrabold text-green-400">🗺️ Halı Sahalar</h1>
           <span className="text-xs text-white/40">{filtrelenmis.length} saha</span>
         </div>

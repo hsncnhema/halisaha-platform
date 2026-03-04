@@ -71,9 +71,6 @@ export default function SahalarPage() {
     <div className="min-h-screen bg-green-950 mx-auto max-w-3xl px-4 pb-16 pt-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/" className="text-sm text-green-400 hover:underline">
-            ← Ana Sayfa
-          </Link>
           <h1 className="mt-1 text-2xl font-extrabold text-white">🏟️ Halı Sahalar</h1>
         </div>
         <span className="text-sm font-medium text-white/40">{filtrelenmis.length} saha</span>

@@ -2,7 +2,6 @@
 
 import { getSahaById } from '@/lib/supabase';
 import { useEffect, useState, use } from 'react';
-import Link from 'next/link';
 
 const bugunTarih = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' });
 
@@ -86,9 +85,6 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
     return (
       <div className="min-h-screen bg-green-950 mx-auto mt-24 max-w-2xl px-4 text-center">
         <p className="mb-3 text-white/40">Saha bulunamadı.</p>
-        <Link href="/" className="text-sm text-green-400 hover:underline">
-          Ana sayfaya dön
-        </Link>
       </div>
     );
   }
@@ -106,10 +102,6 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-green-950 mx-auto max-w-2xl px-4 pb-16 pt-6">
-      <Link href="/" className="text-sm text-green-400 hover:underline">
-        ← Ana Sayfaya Dön
-      </Link>
-
       <div className="mb-3 mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="mb-4 flex items-start justify-between">
           <div>
