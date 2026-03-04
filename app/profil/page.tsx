@@ -46,6 +46,8 @@ export default function ProfilPage() {
   const [basari, setBasari] = useState(false);
   const [ilanlar, setIlanlar] = useState<any[]>([]);
   const [arkadasSayisi, setArkadasSayisi] = useState(0);
+  const [arkadaslar, setArkadaslar] = useState<any[]>([]);
+  const [arkadaslarYukleniyor, setArkadaslarYukleniyor] = useState(false);
   const [aktifSekme, setAktifSekme] = useState<'profil_duzenle' | 'ilanlarim' | 'arkadaslar'>('ilanlarim');
   const router = useRouter();
   const ilceler = form.il ? ILCELER(form.il) : [];
@@ -111,6 +113,29 @@ export default function ProfilPage() {
 
     yukle();
   }, [router]);
+
+  useEffect(() => {
+    if (aktifSekme === 'arkadaslar' && arkadaslar.length === 0 && kullanici.uid) {
+      const arkadaslariGetir = async () => {
+        setArkadaslarYukleniyor(true);
+        const { data } = await supabase
+          .from('arkadasliklar')
+          .select(`
+            id,
+            gonderen:profiles!gonderen_id(id, ad),
+            alici:profiles!alici_id(id, ad)
+          `)
+          .or(`gonderen_id.eq.${kullanici.uid},alici_id.eq.${kullanici.uid}`)
+          .eq('durum', 'kabul');
+
+        if (data) {
+          setArkadaslar(data);
+        }
+        setArkadaslarYukleniyor(false);
+      };
+      arkadaslariGetir();
+    }
+  }, [aktifSekme, kullanici.uid, arkadaslar.length]);
 
   const kaydet = async () => {
     setKaydediliyor(true);
@@ -381,8 +406,40 @@ export default function ProfilPage() {
           )}
         </div>
       ) : aktifSekme === 'arkadaslar' ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-white/50">
-          Yoklamak için Yakında!
+        <div className="flex flex-col gap-3">
+          {arkadaslarYukleniyor ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-sm text-white/50">
+              Yükleniyor...
+            </div>
+          ) : arkadaslar.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-sm text-white/50">
+              Henüz arkadaşın yok.
+            </div>
+          ) : (
+            arkadaslar.map((item: any) => {
+              const arkadas = item.gonderen?.id === kullanici.uid ? item.alici : item.gonderen;
+              if (!arkadas) return null;
+
+              return (
+                <div key={item.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white shadow-lg">
+                      {arkadas.ad ? arkadas.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
+                    </div>
+                    <div className="truncate">
+                      <p className="font-bold text-white text-sm truncate">{arkadas.ad}</p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/profil/${arkadas.id}`}
+                    className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/10 hover:text-green-400"
+                  >
+                    Profile Git
+                  </Link>
+                </div>
+              );
+            })
+          )}
         </div>
       ) : null}
     </div>

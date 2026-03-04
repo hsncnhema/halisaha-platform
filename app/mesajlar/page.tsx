@@ -1,8 +1,9 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +37,9 @@ type Istek = {
     };
 };
 
-export default function MesajlarPage() {
+function MesajlarIcerik() {
+    const searchParams = useSearchParams();
+    const kisiId = searchParams.get('kisi');
     const [kullanici, setKullanici] = useState<User | null>(null);
     const [sohbetler, setSohbetler] = useState<SohbetPartneri[]>([]);
     const [seciliPartner, setSeciliPartner] = useState<SohbetPartneri | null>(null);
@@ -46,6 +49,7 @@ export default function MesajlarPage() {
     const [mobilListeAcik, setMobilListeAcik] = useState(true);
     const [istekler, setIstekler] = useState<Istek[]>([]);
     const [aktifSekme, setAktifSekme] = useState<'mesajlar' | 'istekler'>('mesajlar');
+    const [aktifSohbet, setAktifSohbet] = useState<string | null>(null);
     const mesajlarEndRef = useRef<HTMLDivElement>(null);
 
     // Oturum ve Sohbet Listesi Getirme
@@ -63,6 +67,50 @@ export default function MesajlarPage() {
         };
         oturumAc();
     }, []);
+
+    useEffect(() => {
+        if (kisiId) {
+            setAktifSohbet(kisiId);
+            setAktifSekme('mesajlar');
+        }
+    }, [kisiId]);
+
+    useEffect(() => {
+        if (!aktifSohbet) return;
+        if (seciliPartner?.id === aktifSohbet) return;
+
+        const listedenPartner = sohbetler.find((partner) => partner.id === aktifSohbet);
+        if (listedenPartner) {
+            setSeciliPartner(listedenPartner);
+            setMobilListeAcik(false);
+            return;
+        }
+
+        const aktifSohbetiAc = async () => {
+            const { data: kisi, error } = await supabase
+                .from('profiles')
+                .select('id, ad')
+                .eq('id', aktifSohbet)
+                .single();
+
+            if (error || !kisi) {
+                console.error('Sohbet kisisi cekilemedi:', error);
+                return;
+            }
+
+            setSeciliPartner({
+                id: kisi.id,
+                ad: kisi.ad,
+                avatar_url: null,
+                sonMesaj: '',
+                sonMesajTarihi: '',
+                okunmamisVarMi: false,
+            });
+            setMobilListeAcik(false);
+        };
+
+        void aktifSohbetiAc();
+    }, [aktifSohbet, seciliPartner?.id, sohbetler]);
 
     const istekleriCek = async (userId: string) => {
         const { data } = await supabase
@@ -292,8 +340,8 @@ export default function MesajlarPage() {
                         <button
                             onClick={() => setAktifSekme('mesajlar')}
                             className={`flex-1 py-4 text-sm text-center transition tracking-wide ${aktifSekme === 'mesajlar'
-                                    ? 'border-b-2 border-green-400 text-white font-bold'
-                                    : 'text-white/40 hover:text-white'
+                                ? 'border-b-2 border-green-400 text-white font-bold'
+                                : 'text-white/40 hover:text-white'
                                 }`}
                         >
                             Mesajlar
@@ -301,8 +349,8 @@ export default function MesajlarPage() {
                         <button
                             onClick={() => setAktifSekme('istekler')}
                             className={`flex-1 py-4 text-sm text-center flex items-center justify-center gap-2 transition tracking-wide ${aktifSekme === 'istekler'
-                                    ? 'border-b-2 border-green-400 text-white font-bold'
-                                    : 'text-white/40 hover:text-white'
+                                ? 'border-b-2 border-green-400 text-white font-bold'
+                                : 'text-white/40 hover:text-white'
                                 }`}
                         >
                             İstekler
@@ -363,6 +411,7 @@ export default function MesajlarPage() {
                                         key={partner.id}
                                         onClick={() => {
                                             setSeciliPartner(partner);
+                                            setAktifSohbet(partner.id);
                                             setMobilListeAcik(false); // Mobilde listeyi gizle, sohbeti aç
                                         }}
                                         className={`w-full flex items-center gap-3 p-4 border-b border-white/5 transition hover:bg-white/5 text-left
@@ -464,5 +513,13 @@ export default function MesajlarPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function MesajlarPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-green-950 flex items-center justify-center text-white/50">Yükleniyor...</div>}>
+            <MesajlarIcerik />
+        </Suspense>
     );
 }
