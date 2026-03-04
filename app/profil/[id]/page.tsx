@@ -45,15 +45,15 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                 // Arkadaşlık Durumu Kontrolü
                 if (basvuranId && basvuranId !== id) {
                     const { data: arkadaslikData } = await supabase
-                        .from('arkadaslik')
+                        .from('arkadasliklar')
                         .select('*')
-                        .or(`and(gonderen_id.eq.${basvuranId},alan_id.eq.${id}),and(gonderen_id.eq.${id},alan_id.eq.${basvuranId})`)
+                        .or(`and(gonderen_id.eq.${basvuranId},alici_id.eq.${id}),and(gonderen_id.eq.${id},alici_id.eq.${basvuranId})`)
                         .maybeSingle();
 
                     if (arkadaslikData) {
-                        if (arkadaslikData.durum === 'kabul_edildi') {
+                        if (arkadaslikData.durum === 'kabul') {
                             setArkadaslikDurumu('arkadas');
-                        } else if (arkadaslikData.durum === 'bekliyor') {
+                        } else if (arkadaslikData.durum === 'beklemede') {
                             setArkadaslikDurumu('istek_gonderildi');
                         }
                     }
@@ -69,15 +69,15 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
 
     const arkadasEkle = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
+            const { data: { user: kullanici } } = await supabase.auth.getUser();
+            if (!kullanici) {
                 alert("Arkadaş eklemek için giriş yapmalısınız.");
                 return;
             }
 
             const { error } = await supabase
-                .from('arkadaslik')
-                .insert([{ gonderen_id: user.id, alan_id: id, durum: 'bekliyor' }]);
+                .from('arkadasliklar')
+                .insert([{ gonderen_id: kullanici.id, alici_id: id, durum: 'beklemede' }]);
 
             if (error) throw error;
             setArkadaslikDurumu('istek_gonderildi');
@@ -171,3 +171,4 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
         </div>
     );
 }
+

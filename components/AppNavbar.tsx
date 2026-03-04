@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { MessageCircle, Search, User } from 'lucide-react';
@@ -21,6 +22,8 @@ export default function AppNavbar({ onToggle }: AppNavbarProps) {
   const [aramaMetni, setAramaMetni] = useState('');
   const [aramaSonuclari, setAramaSonuclari] = useState<AramaSonucu[]>([]);
   const [aramaYukleniyor, setAramaYukleniyor] = useState(false);
+  const [bildirimSayisi, setBildirimSayisi] = useState(0);
+  const pathname = usePathname();
   const aramaAlaniRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -33,10 +36,41 @@ export default function AppNavbar({ onToggle }: AppNavbarProps) {
           .eq('id', user.id)
           .single();
         setKullanici({ id: user.id, ad: profile?.ad || '' });
+
+        // Bildirim sayısını çek
+        const { count } = await supabase
+          .from('arkadasliklar')
+          .select('id', { count: 'exact' })
+          .eq('alici_id', user.id)
+          .eq('durum', 'beklemede');
+
+        setBildirimSayisi(count || 0);
+
+        // Realtime bildirimleri dinle
+        const channel = supabase.channel('bildirimler')
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'arkadasliklar',
+            filter: `alici_id=eq.${user.id}`
+          }, () => {
+            setBildirimSayisi(prev => prev + 1);
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
       }
     };
     kontrol();
   }, []);
+
+  useEffect(() => {
+    if (pathname === '/mesajlar') {
+      setBildirimSayisi(0);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (!aramaAcik) return;
@@ -128,10 +162,15 @@ export default function AppNavbar({ onToggle }: AppNavbarProps) {
               </button>
               <Link
                 href="/mesajlar"
-                className="inline-flex items-center justify-center"
+                className="relative inline-flex items-center justify-center"
                 aria-label="Mesajlar"
               >
                 <MessageCircle className="w-5 h-5 text-white/70 hover:text-white transition" />
+                {bildirimSayisi > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white pointer-events-none">
+                    {bildirimSayisi}
+                  </span>
+                )}
               </Link>
               <Link href="/profil">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white transition hover:bg-green-500">

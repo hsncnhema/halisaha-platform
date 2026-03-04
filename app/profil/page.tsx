@@ -97,10 +97,10 @@ export default function ProfilPage() {
 
       // Arkadaşlar (Kabul edilmiş) sayısını bul
       const { data: arkadaslarData } = await supabase
-        .from('arkadaslik')
+        .from('arkadasliklar')
         .select('*')
         .eq('durum', 'kabul_edildi')
-        .or(`gonderen_id.eq.${user.id},alan_id.eq.${user.id}`);
+        .or(`gonderen_id.eq.${user.id},alici_id.eq.${user.id}`);
 
       setArkadasSayisi(arkadaslarData?.length || 0);
 

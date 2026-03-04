@@ -25,6 +25,17 @@ type SohbetPartneri = {
     okunmamisVarMi: boolean;
 };
 
+type Istek = {
+    id: string;
+    alici_id: string;
+    gonderen_id: string;
+    durum: string;
+    profiles: {
+        id: string;
+        ad: string;
+    };
+};
+
 export default function MesajlarPage() {
     const [kullanici, setKullanici] = useState<User | null>(null);
     const [sohbetler, setSohbetler] = useState<SohbetPartneri[]>([]);
@@ -33,6 +44,7 @@ export default function MesajlarPage() {
     const [mesajInput, setMesajInput] = useState('');
     const [yukleniyor, setYukleniyor] = useState(true);
     const [mobilListeAcik, setMobilListeAcik] = useState(true);
+    const [istekler, setIstekler] = useState<Istek[]>([]);
     const mesajlarEndRef = useRef<HTMLDivElement>(null);
 
     // Oturum ve Sohbet Listesi Getirme
@@ -41,12 +53,41 @@ export default function MesajlarPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setKullanici(user);
-                await sohbetListesiCek(user.id);
+                await Promise.all([
+                    sohbetListesiCek(user.id),
+                    istekleriCek(user.id)
+                ]);
             }
             setYukleniyor(false);
         };
         oturumAc();
     }, []);
+
+    const istekleriCek = async (userId: string) => {
+        const { data } = await supabase
+            .from('arkadasliklar')
+            .select(`
+                id, alici_id, gonderen_id, durum,
+                profiles!gonderen_id(id, ad)
+            `)
+            .eq('alici_id', userId)
+            .eq('durum', 'beklemede');
+
+        if (data) {
+            setIstekler(data as any[]);
+        }
+    };
+
+    const istekYanitla = async (istekId: string, yeniDurum: 'kabul_edildi' | 'reddedildi') => {
+        await supabase
+            .from('arkadasliklar')
+            .update({ durum: yeniDurum })
+            .eq('id', istekId);
+
+        if (kullanici) {
+            await istekleriCek(kullanici.id);
+        }
+    };
 
     // Sohbet Listesini Supabase'den Çekme İşlemi (Custom)
     const sohbetListesiCek = async (userId: string) => {
@@ -228,6 +269,42 @@ export default function MesajlarPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
+                    {istekler.length > 0 && (
+                        <div className="border-b border-white/10 pb-2">
+                            <h2 className="px-4 py-2 text-xs font-bold text-white/40 uppercase tracking-wider">
+                                Arkadaşlık İstekleri
+                            </h2>
+                            {istekler.map((istek) => (
+                                <div key={istek.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/5 transition">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white">
+                                            {istek.profiles?.ad ? istek.profiles.ad.charAt(0).toUpperCase() : '?'}
+                                        </div>
+                                        <div className="truncate">
+                                            <p className="text-sm font-bold text-white truncate">{istek.profiles?.ad}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button
+                                            onClick={() => istekYanitla(istek.id, 'kabul_edildi')}
+                                            className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white hover:bg-green-500 transition"
+                                            title="Kabul Et"
+                                        >
+                                            ✓
+                                        </button>
+                                        <button
+                                            onClick={() => istekYanitla(istek.id, 'reddedildi')}
+                                            className="h-8 w-8 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center hover:bg-red-600/50 transition"
+                                            title="Reddet"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {sohbetler.length === 0 ? (
                         <p className="p-6 text-center text-sm text-white/40">Henüz bir mesajınız yok.</p>
                     ) : (
