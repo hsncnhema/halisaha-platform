@@ -78,15 +78,36 @@ export default function MesajlarPage() {
         }
     };
 
-    const istekYanitla = async (istekId: string, yeniDurum: 'kabul_edildi' | 'reddedildi') => {
-        await supabase
+    const kabulEt = async (arkadaslikId: string) => {
+        const { error } = await supabase
             .from('arkadasliklar')
-            .update({ durum: yeniDurum })
-            .eq('id', istekId);
+            .update({ durum: 'kabul' })
+            .eq('id', arkadaslikId);
 
-        if (kullanici) {
-            await istekleriCek(kullanici.id);
+        if (error) {
+            console.error('Kabul hatası:', error);
+            return;
         }
+
+        setIstekler(prev =>
+            prev.filter(i => i.id !== arkadaslikId)
+        );
+    };
+
+    const reddEt = async (arkadaslikId: string) => {
+        const { error } = await supabase
+            .from('arkadasliklar')
+            .update({ durum: 'reddedildi' })
+            .eq('id', arkadaslikId);
+
+        if (error) {
+            console.error('Reddet hatası:', error);
+            return;
+        }
+
+        setIstekler(prev =>
+            prev.filter(i => i.id !== arkadaslikId)
+        );
     };
 
     // Sohbet Listesini Supabase'den Çekme İşlemi (Custom)
@@ -286,14 +307,14 @@ export default function MesajlarPage() {
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         <button
-                                            onClick={() => istekYanitla(istek.id, 'kabul_edildi')}
+                                            onClick={() => kabulEt(istek.id)}
                                             className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white hover:bg-green-500 transition"
                                             title="Kabul Et"
                                         >
                                             ✓
                                         </button>
                                         <button
-                                            onClick={() => istekYanitla(istek.id, 'reddedildi')}
+                                            onClick={() => reddEt(istek.id)}
                                             className="h-8 w-8 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center hover:bg-red-600/50 transition"
                                             title="Reddet"
                                         >
