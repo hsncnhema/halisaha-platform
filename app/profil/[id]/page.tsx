@@ -75,6 +75,17 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                 return;
             }
 
+            const { data: mevcutIstek } = await supabase
+                .from('arkadasliklar')
+                .select('id, durum')
+                .or(`and(gonderen_id.eq.${kullanici.id},alici_id.eq.${id}),and(gonderen_id.eq.${id},alici_id.eq.${kullanici.id})`)
+                .maybeSingle();
+
+            if (mevcutIstek) {
+                alert('Zaten istek gönderilmiş veya arkadaşsınız.');
+                return;
+            }
+
             const { error } = await supabase
                 .from('arkadasliklar')
                 .insert([{ gonderen_id: kullanici.id, alici_id: id, durum: 'beklemede' }]);
