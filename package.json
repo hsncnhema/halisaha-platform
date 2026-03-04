@@ -14,6 +14,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.98.0",
     "@vis.gl/react-google-maps": "^1.7.1",
+    "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

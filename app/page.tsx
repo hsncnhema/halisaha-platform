@@ -57,6 +57,7 @@ export default function AnaSayfa() {
   const [ilanlar, setIlanlar] = useState<IlanKartItem[]>([]);
   const [kullaniciIlce, setKullaniciIlce] = useState<string | null>(null);
   const [haritaMerkez, setHaritaMerkez] = useState(ISTANBUL_MERKEZ);
+  const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
     const yukle = async () => {
@@ -154,11 +155,15 @@ export default function AnaSayfa() {
     if (ilanlar.length <= 1) return;
 
     const interval = setInterval(() => {
-      setIlanlar((prev) => {
-        const arr = [...prev];
-        arr.push(arr.shift()!);
-        return arr;
-      });
+      setOpacity(0);
+      setTimeout(() => {
+        setIlanlar((prev) => {
+          const arr = [...prev];
+          arr.push(arr.shift()!);
+          return arr;
+        });
+        setOpacity(1);
+      }, 500);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -334,7 +339,7 @@ export default function AnaSayfa() {
             </div>
 
             {gosterilenIlanlar.length > 0 ? (
-              <div className="flex flex-col gap-4 transition-all duration-700 ease-in-out">
+              <div className="flex flex-col gap-4" style={{ opacity, transition: 'opacity 0.5s ease' }}>
                 {gosterilenIlanlar.map((ilan) => {
                   const kategoriLower = (ilan.kategori || '').toLocaleLowerCase('tr-TR');
                   const oyuncuKategori = kategoriLower.includes('oyuncu');
