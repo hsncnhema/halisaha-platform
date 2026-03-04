@@ -13,6 +13,12 @@ type NavItem = {
   icon: string;
   disabled?: boolean;
   adminOnly?: boolean;
+  authOnly?: boolean;
+};
+
+type SidebarProps = {
+  isOpen: boolean;
+  onClose: () => void;
 };
 
 const navItems: NavItem[] = [
@@ -20,9 +26,9 @@ const navItems: NavItem[] = [
   { href: '/sahalar', label: 'Sahalar', icon: '\u{1F50D}' },
   { href: '/harita', label: 'Harita', icon: '\u{1F5FA}\uFE0F' },
   { href: '/ilanlar', label: 'Ilanlar', icon: '\u{1F4CB}' },
-  { href: '/mesajlar', label: 'Mesajlar', icon: '\u{1F4AC}', disabled: true },
-  { href: '/profil', label: 'Profil', icon: '\u{1F464}' },
-  { href: '/admin', label: 'Admin', icon: '\u2699\uFE0F', adminOnly: true },
+  { href: '/mesajlar', label: 'Mesajlar', icon: '\u{1F4AC}', disabled: true, authOnly: true },
+  { href: '/profil', label: 'Profil', icon: '\u{1F464}', authOnly: true },
+  { href: '/admin', label: 'Admin', icon: '\u2699\uFE0F', adminOnly: true, authOnly: true },
 ];
 
 const getAktif = (pathname: string, href: string) => {
@@ -30,7 +36,7 @@ const getAktif = (pathname: string, href: string) => {
   return pathname === href || pathname.startsWith(`${href}/`);
 };
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [tip, setTip] = useState<KullaniciTipi>(null);
@@ -80,77 +86,109 @@ export default function Sidebar() {
   }, []);
 
   const gorunenNavItems = useMemo(
-    () => navItems.filter((item) => !(item.adminOnly && tip !== 'admin')),
-    [tip]
+    () =>
+      navItems.filter((item) => {
+        if (item.authOnly && !girisYapti) return false;
+        if (item.adminOnly && tip !== 'admin') return false;
+        return true;
+      }),
+    [girisYapti, tip]
   );
 
   const cikisYap = async () => {
     await supabase.auth.signOut();
+    onClose();
     router.push('/login');
     router.refresh();
   };
 
+  const mobilAcikClass = isOpen ? 'translate-x-0' : '-translate-x-full';
+
   return (
-    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-56 md:flex-col md:border-r md:border-white/10 md:bg-green-950">
-      <div className="flex h-14 items-center border-b border-white/10 px-4">
-        <Link href="/" className="inline-flex items-center">
-          <span className="text-xl font-black text-green-400">saha</span>
-          <span className="text-xl font-black text-white">gram</span>
-        </Link>
-      </div>
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {gorunenNavItems.map((item) => {
-          const aktif = getAktif(pathname, item.href);
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r border-white/10 bg-green-950 transition-transform duration-300 ease-in-out ${mobilAcikClass} md:translate-x-0`}
+      >
+        <div className="flex h-14 items-center border-b border-white/10 px-4">
+          <Link href="/" className="inline-flex items-center" onClick={onClose}>
+            <span className="text-xl font-black text-green-400">saha</span>
+            <span className="text-xl font-black text-white">gram</span>
+          </Link>
+        </div>
 
-          if (item.disabled) {
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {gorunenNavItems.map((item) => {
+            const aktif = getAktif(pathname, item.href);
+
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.href}
+                  className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/30"
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                  <span className="ml-auto text-[10px] uppercase tracking-wide text-white/20">Yakinda</span>
+                </div>
+              );
+            }
+
             return (
-              <div
+              <Link
                 key={item.href}
-                className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/30"
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  aktif
+                    ? 'bg-green-800/50 text-green-400'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                }`}
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
-                <span className="ml-auto text-[10px] uppercase tracking-wide text-white/20">Yakinda</span>
-              </div>
+              </Link>
             );
-          }
+          })}
+        </nav>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                aktif
-                  ? 'bg-green-800/50 text-green-400'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white'
-              }`}
+        <div className="border-t border-white/10 px-4 py-4">
+          <p className="truncate text-sm font-semibold text-white">{ad}</p>
+
+          {girisYapti ? (
+            <button
+              onClick={cikisYap}
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
             >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-white/10 px-4 py-4">
-        <p className="truncate text-sm font-semibold text-white">{ad}</p>
-        {girisYapti ? (
-          <button
-            onClick={cikisYap}
-            className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
-          >
-            Cikis Yap
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            className="mt-2 block w-full rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-center text-sm font-semibold text-green-400 transition hover:bg-green-500/20"
-          >
-            Giris Yap
-          </Link>
-        )}
-      </div>
-    </aside>
+              Cikis Yap
+            </button>
+          ) : (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Link
+                href="/kayit"
+                onClick={onClose}
+                className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-center text-sm font-semibold text-green-400 transition hover:bg-green-500/20"
+              >
+                Uye Ol
+              </Link>
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center text-sm font-semibold text-white/80 transition hover:bg-white/10"
+              >
+                Giris Yap
+              </Link>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }
