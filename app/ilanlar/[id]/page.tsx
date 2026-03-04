@@ -1,18 +1,46 @@
-export const dynamic = 'force-dynamic';
+'use client';
 
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { useEffect, useState, use } from 'react';
 
-export default async function IlanDetay({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { data: ilan } = await supabase
-    .from('ilanlar')
-    .select('*, profiles(ad)')
-    .eq('id', params.id)
-    .single();
+type IlanDetayData = {
+  id: string;
+  kategori: string;
+  ilce: string;
+  baslik: string;
+  aciklama: string;
+  tarih: string | null;
+  saat: string | null;
+  format?: string | null;
+  profiles?: { ad: string } | null;
+};
+
+export default function IlanDetayPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [ilan, setIlan] = useState<IlanDetayData | null>(null);
+  const [yukleniyor, setYukleniyor] = useState(true);
+
+  useEffect(() => {
+    const getir = async () => {
+      const { data } = await supabase
+        .from('ilanlar')
+        .select('*, profiles(ad)')
+        .eq('id', id)
+        .single();
+      setIlan(data as IlanDetayData | null);
+      setYukleniyor(false);
+    };
+    getir();
+  }, [id]);
+
+  if (yukleniyor) {
+    return (
+      <div className="min-h-screen bg-green-950 flex items-center justify-center">
+        <p className="text-sm text-white/40">Yükleniyor...</p>
+      </div>
+    );
+  }
 
   if (!ilan) {
     return (
@@ -68,7 +96,7 @@ export default async function IlanDetay({
               Paylaşan: {ilan.profiles?.ad || 'Anonim'}
             </p>
             <a
-              href={`https://wa.me/?text=Sahagram'da "${ilan.baslik}" ilanınızı gördüm, iletişime geçmek istedim.`}
+              href={`https://wa.me/?text=${encodeURIComponent(`Sahagram'da "${ilan.baslik}" ilanınızı gördüm, iletişime geçmek istedim.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-500"
