@@ -1,4 +1,4 @@
-# CLAUDE.md — HalıSaha Platform
+# CLAUDE.md — Sahagram
 
 Proje kökü: `C:\Users\Win11\Desktop\halisaha-platform`
 
@@ -6,7 +6,7 @@ Proje kökü: `C:\Users\Win11\Desktop\halisaha-platform`
 
 ## Proje Özeti
 
-**HalıSaha Platform**, İstanbul'daki halı saha tesislerini futbolcularla buluşturan bir web uygulamasıdır.
+**Sahagram**, Türkiye genelindeki halı saha tesislerini futbolcularla buluşturan bir web uygulamasıdır.
 Saha sahipleri tesislerini kayıt edip müsaitlik takvimini yönetebilir; futbolcular sahalar arasında filtreleyip WhatsApp üzerinden rezervasyon yapabilir. Platform oyuncu ilanları ve turnuva desteği sunar.
 
 ---
@@ -33,12 +33,12 @@ Saha sahipleri tesislerini kayıt edip müsaitlik takvimini yönetebilir; futbol
 ```
 halisaha-platform/
 ├── app/                             # Next.js App Router
-│   ├── page.tsx                     # Ana sayfa
+│   ├── page.tsx                     # Ana sayfa (hero + özellikler + sahalar + ilanlar)
 │   ├── layout.tsx                   # Kök layout
-│   ├── globals.css                  # Global stiller
+│   ├── globals.css                  # Global stiller + animasyonlar
 │   ├── login/page.tsx               # Giriş sayfası
 │   ├── kayit/page.tsx               # Futbolcu kayıt
-│   ├── kayit/halisaha/page.js       # Saha sahibi kayıt
+│   ├── kayit/halisaha/page.tsx      # Saha sahibi kayıt
 │   ├── profil/page.tsx              # Kullanıcı profili
 │   ├── profil-tamamla/page.tsx      # Profil tamamlama formu
 │   ├── sahalar/page.tsx             # Saha listeleme
@@ -47,16 +47,18 @@ halisaha-platform/
 │   ├── ilanlar/page.tsx             # İlan panosu (realtime)
 │   ├── halisaha/panel/page.tsx      # Saha sahibi yönetim paneli
 │   ├── halisaha/beklemede/page.tsx  # Onay bekleme sayfası
-│   ├── admin/page.js                # Admin paneli
+│   ├── admin/page.tsx               # Admin paneli
 │   └── auth/callback/route.ts       # OAuth callback handler
+├── components/
+│   ├── AppNavbar.tsx                # Üst navigasyon çubuğu
+│   └── NavigationLoader.tsx         # Sayfa geçiş animasyonu
 ├── lib/
-│   └── supabase.ts                  # Supabase client & helper fonksiyonlar
+│   ├── supabase.ts                  # Supabase client & helper fonksiyonlar
+│   └── turkiye.ts                   # İl/ilçe verileri ve koordinatlar
 ├── middleware.ts                    # Auth middleware (session yönetimi)
 ├── supabase/
-│   └── migrations/
-│       ├── 001_initial.sql          # DB şeması & RLS politikaları
-│       └── ...                      # Ek migration dosyaları
-├── public/                          # Statik dosyalar
+│   └── migrations/                  # DB şeması & RLS politikaları
+├── public/                          # Statik dosyalar (icon.png, vb.)
 ├── .env.local                       # Ortam değişkenleri (commit edilmez)
 ├── next.config.ts
 ├── tailwind.config.js
@@ -284,9 +286,40 @@ npm run lint     # ESLint kontrolü
 - 7 günlük ileri takvim
 
 ### Koordinat Sistemi
-- 39 İstanbul ilçesi için sabit merkez koordinatları (`ILCE_KOORDINATLARI`)
+- `lib/turkiye.ts`: `ILLER`, `ILCELER(il)`, `getKoordinat(ilce, il)` fonksiyonları
+- `turkey-neighbourhoods` paketi kurulu
+- Tüm il/ilçe dropdown'ları dinamik, Türkiye geneli destekleniyor
 - Sahalar için GPS girilmediyse ilçe merkezi kullanılıyor
-- İstanbul merkezi: `41.0082, 28.9784`
+
+---
+
+## Tema & Tasarım
+
+Tüm sayfalar koyu yeşil temada. Renk sistemi:
+
+| Öğe | Sınıf |
+|-----|-------|
+| Ana arka plan | `bg-green-950` |
+| Alternatif bölümler | `bg-green-900/30` |
+| Kartlar | `bg-white/5 border border-white/10` |
+| Başlıklar | `text-white` |
+| Alt yazılar | `text-white/60`, `text-white/40` |
+| Etiketler / ipuçları | `text-white/30` |
+| Vurgu renkleri | `text-green-400`, `bg-green-500`, `bg-green-600` |
+| Inputlar | `bg-white/10 border-white/20 text-white placeholder:text-white/30` |
+| Navbar | `bg-green-950/90 backdrop-blur-md` |
+| Logo | "**saha**" yeşil (`text-green-400`) + "**gram**" beyaz (`text-white`), `font-black` |
+| Butonlar (primary) | `bg-green-600 text-white hover:bg-green-700` |
+| Butonlar (disabled) | `disabled:bg-white/10 disabled:text-white/30` |
+| Başarı mesajları | `border-green-500/30 bg-green-500/10 text-green-400` |
+| Hata mesajları | `border-red-500/30 bg-red-500/10 text-red-400` |
+
+## Loading Animasyonu
+
+- `components/NavigationLoader.tsx` tüm sayfa geçişlerini yönetiyor (`usePathname()` ile)
+- Arka plan: `bg-green-950`, yeşil kayan çizgi animasyonu
+- `app/loading.tsx` kaldırıldı, NavigationLoader yeterli
+- Animasyon keyframe'leri: `ball-realistic-bounce`, `shadow-pulse`, `ball-spin`, `fade-in`, `star-pulse` (`globals.css`)
 
 ---
 
@@ -308,6 +341,12 @@ npm run lint     # ESLint kontrolü
 - [x] Admin onay sistemi (saha onay/red/deaktif akışı)
 - [x] Saha kayıt akışı Supabase'e taşındı (`beklemede → aktif | reddedildi`)
 - [x] Google OAuth yönlendirme sorunu düzeltildi
+- [x] Sahagram rebrand (logo, marka kimliği)
+- [x] Koyu yeşil tema (tüm sayfalar `bg-green-950`)
+- [x] Premium hero section (yıldız animasyonları, gradient, istatistik kartları)
+- [x] Türkiye geneli il/ilçe entegrasyonu (`lib/turkiye.ts`)
+- [x] NavigationLoader ile sayfa geçiş animasyonu
+- [x] Supabase Auth (PKCE flow) + Google OAuth callback
 
 ## TODO - Öncelik Sırası
 
@@ -319,14 +358,6 @@ npm run lint     # ESLint kontrolü
 - [ ] Mesajlaşma sistemi
 
 ### Önemli
-- [ ] Türkiye geneli tüm iller/ilçeler eklenmeli
-- [ ] Site içeriği Türkiye geneline göre düzenlenmeli
-- [ ] Saha kayıt formuna ilçe bazlı koordinat atama
 - [ ] Halısaha panel detaylandırma
 - [ ] Admin paneli genişletme
-
-### Tasarım
-- [ ] Ana sayfa UI/UX yenileme
-- [ ] Renk kombinasyonu ve görsel deneyim
-- [ ] Marka kimliği ve isim kararı
 - [ ] Mobil responsive iyileştirme

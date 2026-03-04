@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const selectClass =
-  'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
+  'bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2';
 
 export default function ProfilTamamlaPage() {
   const [mevki, setMevki] = useState('');

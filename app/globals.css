@@ -51,6 +51,21 @@
   to { opacity: 1; }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes textGlow {
+  0%, 100% { text-shadow: 0 0 8px #4ade8040; }
+  50% { text-shadow: 0 0 20px #4ade8099, 0 0 40px #4ade8033; }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-10deg) translateY(0px); }
+  50% { transform: rotate(10deg) translateY(-4px); }
+}
+
 @keyframes dots {
   0%, 20% { content: ''; }
   40% { content: '.'; }
@@ -74,6 +89,20 @@
   animation: fade-in 0.3s ease-out;
 }
 
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease forwards;
+  animation-timeline: view();
+  animation-range: entry 10% cover 30%;
+}
+
+.animate-glow {
+  animation: textGlow 2s ease-in-out infinite;
+}
+
+.animate-sway {
+  animation: sway ease-in-out infinite;
+}
+
 /* Hero yildiz/partikul efekti */
 @keyframes star-pulse {
   0%, 100% { opacity: 0.1; transform: scale(0.8); }
@@ -93,4 +122,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+select option {
+  background-color: #052e16;
+  color: white;
 }

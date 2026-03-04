@@ -85,7 +85,7 @@ export default function HaritaPage() {
           <select
             value={filtre.format}
             onChange={(e) => setFiltre({ format: e.target.value })}
-            className="cursor-pointer rounded-lg bg-white/10 border border-white/10 text-white px-3 py-1.5 text-sm focus:border-green-400 focus:outline-none"
+            className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
           >
             <option value="">Tüm Formatlar</option>
             <option value="5v5">5v5</option>

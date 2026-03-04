@@ -1,12 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getIlanlar, getSahalar } from '@/lib/supabase';
+import { getIlanlar, getSahalar, supabase } from '@/lib/supabase';
 import { getKoordinat } from '@/lib/turkiye';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import Link from 'next/link';
 
-const TURKIYE_MERKEZ = { lat: 39.0, lng: 35.0 };
+const ISTANBUL_MERKEZ = { lat: 41.0082, lng: 28.9784 };
+
+type GeocodeAddressComponent = {
+  long_name: string;
+  types: string[];
+};
+
+type GeocodeResult = {
+  address_components?: GeocodeAddressComponent[];
+};
+
+type GeocodeResponse = {
+  results?: GeocodeResult[];
+};
 
 const kalanSure = (silinmeZamani: string) => {
   const fark = new Date(silinmeZamani).getTime() - Date.now();
@@ -19,20 +32,31 @@ const kalanSure = (silinmeZamani: string) => {
 
 type SahaItem = Awaited<ReturnType<typeof getSahalar>>[number];
 type IlanItem = Awaited<ReturnType<typeof getIlanlar>>[number];
+type IlanKartItem = IlanItem & { paylasanAd?: string | null };
 
-const YILDIZLAR = Array.from({ length: 36 }, (_, i) => ({
+const ilceBaslikMetni = (ilce: string | null) => {
+  if (!ilce) return '\u00d6ne \u00c7\u0131kan \u0130lanlar';
+  return `${ilce} \u00d6ne \u00c7\u0131kan \u0130lanlar`;
+};
+
+const YILDIZLAR = Array.from({ length: 50 }, (_, i) => ({
   id: i,
   top: `${Math.floor((i * 7 + 13) % 100)}%`,
   left: `${Math.floor((i * 11 + 7) % 100)}%`,
-  size: (i % 3) + 1,
-  delay: `${(i * 0.3) % 4}s`,
-  duration: `${3 + (i % 3)}s`,
+  width: (i % 2) + 1,
+  height: 4 + (i % 7),
+  opacity: 0.15 + (i % 4) * 0.07,
+  delay: `${(i * 0.2) % 3}s`,
+  duration: `${2 + (i % 3)}s`,
+  rotate: -15 + (i % 30),
 }));
 
 export default function AnaSayfa() {
   const [yukleniyor, setYukleniyor] = useState(true);
   const [sahalar, setSahalar] = useState<SahaItem[]>([]);
-  const [ilanlar, setIlanlar] = useState<IlanItem[]>([]);
+  const [ilanlar, setIlanlar] = useState<IlanKartItem[]>([]);
+  const [kullaniciIlce, setKullaniciIlce] = useState<string | null>(null);
+  const [haritaMerkez, setHaritaMerkez] = useState(ISTANBUL_MERKEZ);
 
   useEffect(() => {
     const yukle = async () => {
@@ -46,7 +70,31 @@ export default function AnaSayfa() {
           })
           .filter((s) => typeof s.lat === 'number' && typeof s.lng === 'number') as SahaItem[];
         setSahalar(normalizeSahalar);
-        setIlanlar(ilanlarData as IlanItem[]);
+
+        const gelenIlanlar = ilanlarData as IlanItem[];
+        const userIdler = Array.from(
+          new Set(gelenIlanlar.map((ilan) => ilan.userId).filter(Boolean))
+        ) as string[];
+
+        const paylasanAdMap = new globalThis.Map<string, string>();
+        if (userIdler.length > 0) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, ad')
+            .in('id', userIdler);
+
+          for (const profile of profileData ?? []) {
+            if (profile.id && profile.ad) {
+              paylasanAdMap.set(profile.id, profile.ad);
+            }
+          }
+        }
+
+        const zenginIlanlar: IlanKartItem[] = gelenIlanlar.map((ilan) => ({
+          ...ilan,
+          paylasanAd: paylasanAdMap.get(ilan.userId) ?? null,
+        }));
+        setIlanlar(zenginIlanlar);
       } catch (err) {
         console.error(err);
       } finally {
@@ -56,25 +104,84 @@ export default function AnaSayfa() {
     yukle();
   }, []);
 
-  if (yukleniyor) return null;
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setHaritaMerkez(ISTANBUL_MERKEZ);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setHaritaMerkez({ lat: latitude, lng: longitude });
+
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) return;
+
+        try {
+          const res = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}&language=tr`
+          );
+
+          if (!res.ok) return;
+
+          const data = (await res.json()) as GeocodeResponse;
+          const components = data.results?.[0]?.address_components || [];
+
+          const ilce = components.find(
+            (c) =>
+              c.types.includes('administrative_area_level_4') ||
+              c.types.includes('administrative_area_level_3')
+          )?.long_name;
+
+          if (ilce) setKullaniciIlce(ilce);
+        } catch (error) {
+          console.error('Konum geocode hatasi:', error);
+        }
+      },
+      () => {
+        setHaritaMerkez(ISTANBUL_MERKEZ);
+      }
+    );
+  }, []);
+
+  useEffect(() => {
+    if (ilanlar.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setIlanlar((prev) => {
+        const arr = [...prev];
+        arr.push(arr.shift()!);
+        return arr;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [ilanlar.length]);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const gosterilenIlanlar = ilanlar.slice(0, 4);
+
+  if (yukleniyor) return null;
 
   return (
     <div className="min-h-screen bg-green-950">
 
       {/* HERO */}
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-green-950 via-green-900 to-green-950">
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-green-950 via-green-900 to-green-950 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:content-[''] before:bg-[radial-gradient(ellipse_at_top,_#16a34a20_0%,_transparent_60%)]">
         {YILDIZLAR.map((y) => (
           <span
             key={y.id}
-            className="pointer-events-none absolute rounded-full bg-green-950 opacity-40"
+            className="pointer-events-none absolute rounded-full bg-green-400 animate-sway"
             style={{
               top: y.top,
               left: y.left,
-              width: `${y.size}px`,
-              height: `${y.size}px`,
-              animation: `pulse ${y.duration} ${y.delay} infinite`,
+              width: `${y.width}px`,
+              height: `${y.height}px`,
+              opacity: y.opacity,
+              animationDelay: y.delay,
+              animationDuration: y.duration,
+              transform: `rotate(${y.rotate}deg)`,
             }}
           />
         ))}
@@ -95,7 +202,7 @@ export default function AnaSayfa() {
               Saha Bul
             </Link>
             <Link href="/ilanlar" className="rounded-xl border-2 border-white/20 px-8 py-3.5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/5">
-              Oyuncu Ara
+              Oyuncu / Takım Ara
             </Link>
           </div>
           <div className="mb-16 flex justify-center gap-4">
@@ -122,7 +229,10 @@ export default function AnaSayfa() {
               { deger: '81', etiket: 'İl' },
             ].map((item) => (
               <div key={item.etiket} className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 backdrop-blur-sm">
-                <div className="text-2xl font-black text-white">{item.deger}</div>
+                <div className="flex items-center justify-center">
+                  <span className="mr-1 h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <div className="text-2xl font-black text-white">{item.deger}</div>
+                </div>
                 <div className="text-sm text-white/50">{item.etiket}</div>
               </div>
             ))}
@@ -140,8 +250,12 @@ export default function AnaSayfa() {
               { icon: '👤', baslik: 'Oyuncu Profili', aciklama: 'Mevkini ve seviyeni belirle, seni görsünler.' },
               { icon: '👥', baslik: 'Takım Kur', aciklama: 'Takımını oluştur, kadroyu tamamla.' },
               { icon: '📋', baslik: 'İlan Panosu', aciklama: 'Oyuncu ara, takım bul, maç ayarla.' },
-            ].map((item) => (
-              <div key={item.baslik} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            ].map((item, index) => (
+              <div
+                key={item.baslik}
+                className="rounded-2xl border border-white/10 bg-white/5 p-5 opacity-0 animate-fadeInUp transition-transform duration-200 hover:bg-white/10 hover:scale-[1.02]"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-green-600/20 text-lg">
                   {item.icon}
                 </div>
@@ -162,7 +276,7 @@ export default function AnaSayfa() {
           </div>
           <div className="mb-8 h-64 overflow-hidden rounded-2xl border border-white/10 sm:h-80">
             <APIProvider apiKey={apiKey ?? ''}>
-              <Map defaultCenter={TURKIYE_MERKEZ} defaultZoom={6} mapId="halisaha-mini-map" style={{ width: '100%', height: '100%' }} gestureHandling="cooperative" disableDefaultUI>
+              <Map key={`${haritaMerkez.lat}-${haritaMerkez.lng}`} defaultCenter={haritaMerkez} defaultZoom={13} mapId="halisaha-mini-map" style={{ width: '100%', height: '100%' }} gestureHandling="cooperative" disableDefaultUI>
                 {sahalar.map((saha) => (
                   <AdvancedMarker key={saha.id} position={{ lat: saha.lat as number, lng: saha.lng as number }} onClick={() => { window.location.href = `/saha/${saha.id}`; }}>
                     <div className="cursor-pointer whitespace-nowrap rounded-full border-2 border-white bg-green-600 px-2 py-1 text-xs font-bold text-white shadow-md">
@@ -176,8 +290,8 @@ export default function AnaSayfa() {
           {sahalar.length > 0 && (
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {sahalar.slice(0, 4).map((saha) => (
-                  <Link key={saha.id} href={`/saha/${saha.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-green-500/40 hover:bg-white/10">
+                {sahalar.slice(0, 4).map((saha, index) => (
+                  <Link key={saha.id} href={`/saha/${saha.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 opacity-0 animate-fadeInUp transition-all duration-200 hover:scale-[1.02] hover:border-green-500/40 hover:bg-white/10 hover:shadow-lg hover:shadow-green-900/50" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-white">{saha.sahaAdi}</p>
                       <p className="mt-0.5 text-xs text-white/40">📍 {saha.ilce} · {saha.format}</p>
@@ -198,31 +312,82 @@ export default function AnaSayfa() {
         </div>
       </section>
 
-      {/* SON İLANLAR */}
+      {/* ÖNE ÇIKAN İLANLAR */}
       {ilanlar.length > 0 && (
-        <section className="bg-green-950 py-16">
+        <section className="border-y border-white/5 bg-green-900/20 py-16">
           <div className="mx-auto max-w-4xl px-4">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-white">📋 Son İlanlar</h2>
-              <Link href="/ilanlar" className="text-sm font-semibold text-green-400 hover:underline">Tümünü gör →</Link>
+            <div className="mb-7 flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="mr-3 h-8 w-1 bg-green-400" />
+                <h2 className="animate-glow text-2xl font-black text-white">{ilceBaslikMetni(kullaniciIlce)}</h2>
+              </div>
+              <Link href="/ilanlar" className="text-sm font-semibold text-green-400 hover:underline">
+                Tümünü gör &rarr;
+              </Link>
             </div>
-            <div className="flex flex-col gap-3">
-              {ilanlar.map((ilan) => (
-                <div key={ilan.id} className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex flex-wrap gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${ilan.kategori === 'Oyuncu Arıyorum' ? 'bg-green-900/60 text-green-300' : 'bg-blue-900/60 text-blue-300'}`}>
-                        {ilan.kategori}
-                      </span>
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white/50">📍 {ilan.ilce}</span>
+
+            {gosterilenIlanlar.length > 0 ? (
+              <div className="flex flex-col gap-4 transition-all duration-700 ease-in-out">
+                {gosterilenIlanlar.map((ilan) => {
+                  const kategoriLower = (ilan.kategori || '').toLocaleLowerCase('tr-TR');
+                  const oyuncuKategori = kategoriLower.includes('oyuncu');
+                  const takimKategori =
+                    kategoriLower.includes('takim');
+
+                  return (
+                    <div
+                      key={ilan.id}
+                      className="rounded-xl border border-white/10 border-l-4 border-l-green-400 bg-white/5 p-5 transition-all duration-700 ease-in-out hover:scale-[1.01] hover:bg-white/10 hover:shadow-lg hover:shadow-green-900/40"
+                    >
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div className="flex flex-wrap gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                              oyuncuKategori
+                                ? 'border border-green-500/30 bg-green-500/20 text-green-300'
+                                : takimKategori
+                                  ? 'border border-blue-500/30 bg-blue-500/20 text-blue-300'
+                                  : 'border border-white/15 bg-white/10 text-white/70'
+                            }`}
+                          >
+                            {ilan.kategori}
+                          </span>
+                          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/60">
+                            Ilce: {ilan.ilce?.toLocaleUpperCase('tr-TR')}
+                          </span>
+                        </div>
+                        <span className="shrink-0 text-xs text-white/30">Sure: {kalanSure(ilan.silinmeZamani)}</span>
+                      </div>
+
+                      <p className="mb-2 text-lg font-bold text-white">{ilan.baslik}</p>
+                      <p className="line-clamp-2 text-sm text-white/60">{ilan.aciklama}</p>
+
+                      {(ilan.tarih || ilan.saat) && (
+                        <p className="mt-3 text-sm font-semibold text-green-400">
+                          Tarih: {ilan.tarih} {ilan.saat}
+                        </p>
+                      )}
+
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+                        <span className="text-xs text-white/50">
+                          Paylasan: {ilan.paylasanAd || 'Bilinmeyen Kullanici'}
+                        </span>
+                        <Link
+                          href={`/ilanlar/${ilan.id}`}
+                          className="rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-xs font-bold text-green-300 transition hover:bg-green-500/20"
+                        >
+                          Detayi Gor &rarr;
+                        </Link>
+                      </div>
                     </div>
-                    <p className="truncate text-sm font-bold text-white">{ilan.baslik}</p>
-                    {ilan.tarih && <p className="mt-0.5 text-xs font-semibold text-green-400">🗓 {ilan.tarih} {ilan.saat}</p>}
-                  </div>
-                  <span className="shrink-0 text-xs text-white/30">⏱ {kalanSure(ilan.silinmeZamani)}</span>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+                <p className="text-sm text-white/60">Henuz ilan yok.</p>
+              </div>
+            )}
           </div>
         </section>
       )}

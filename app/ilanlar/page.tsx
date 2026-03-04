@@ -181,7 +181,7 @@ export default function IlanlarPage() {
             <select
               value={form.kategori}
               onChange={(e) => setForm({ ...form, kategori: e.target.value })}
-              className="w-full rounded-xl bg-white/10 border border-white/10 text-white px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
+              className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
             >
               <option value="Oyuncu Arıyorum">Oyuncu Arıyorum</option>
               <option value="Takım Arıyorum">Takım Arıyorum</option>
@@ -190,7 +190,7 @@ export default function IlanlarPage() {
             <select
               value={form.il}
               onChange={(e) => setForm({ ...form, il: e.target.value, ilce: '' })}
-              className="w-full rounded-xl bg-white/10 border border-white/10 text-white px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
+              className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
             >
               <option value="">Il sec *</option>
               {ILLER.map((il) => (
@@ -203,7 +203,7 @@ export default function IlanlarPage() {
               value={form.ilce}
               onChange={(e) => setForm({ ...form, ilce: e.target.value })}
               disabled={!form.il}
-              className="w-full rounded-xl bg-white/10 border border-white/10 text-white px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
+              className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
             >
               <option value="">{form.il ? "Ilce sec *" : "Once il sec *"}</option>
               {formIlceler.map((i) => (
@@ -256,7 +256,7 @@ export default function IlanlarPage() {
         <select
           value={filtre.kategori}
           onChange={(e) => setFiltre({ ...filtre, kategori: e.target.value })}
-          className="cursor-pointer rounded-lg bg-white/10 border border-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">Tüm Kategoriler</option>
           <option value="Oyuncu Arıyorum">Oyuncu Arıyorum</option>
@@ -266,7 +266,7 @@ export default function IlanlarPage() {
         <select
           value={filtre.il}
           onChange={(e) => setFiltre({ ...filtre, il: e.target.value, ilce: '' })}
-          className="cursor-pointer rounded-lg bg-white/10 border border-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">Tum Iller</option>
           {ILLER.map((il) => (
@@ -279,7 +279,7 @@ export default function IlanlarPage() {
           value={filtre.ilce}
           onChange={(e) => setFiltre({ ...filtre, ilce: e.target.value })}
           disabled={!filtre.il}
-          className="cursor-pointer rounded-lg bg-white/10 border border-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">Tüm İlçeler</option>
           {filtreIlceler.map((i) => (

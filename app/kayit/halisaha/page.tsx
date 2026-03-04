@@ -216,7 +216,7 @@ export default function HalisahaKayitPage() {
             setIl(e.target.value);
             setIlce('');
           }}
-          className="w-full rounded-lg bg-white/10 border border-white/10 text-white px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">Il sec *</option>
           {ILLER.map((sehir) => (
@@ -229,7 +229,7 @@ export default function HalisahaKayitPage() {
           value={ilce}
           onChange={(e) => setIlce(e.target.value)}
           disabled={!il}
-          className="w-full rounded-lg bg-white/10 border border-white/10 text-white px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">{il ? 'Ilce sec *' : 'Once il sec *'}</option>
           {ilceler.map((seciliIlce) => (

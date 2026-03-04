@@ -93,7 +93,7 @@ export default function SahalarPage() {
         <select
           value={filtre.il}
           onChange={(e) => setFiltre({ ...filtre, il: e.target.value, ilce: '' })}
-          className="cursor-pointer rounded-lg border border-white/10 bg-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">Tüm İller</option>
           {ILLER.map((il) => (
@@ -107,7 +107,7 @@ export default function SahalarPage() {
           value={filtre.ilce}
           onChange={(e) => setFiltre({ ...filtre, ilce: e.target.value })}
           disabled={!filtre.il}
-          className="cursor-pointer rounded-lg border border-white/10 bg-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">{filtre.il ? 'Tum Ilceler' : 'Once il sec'}</option>
           {ilceler.map((i) => (
@@ -120,7 +120,7 @@ export default function SahalarPage() {
         <select
           value={filtre.format}
           onChange={(e) => setFiltre({ ...filtre, format: e.target.value })}
-          className="cursor-pointer rounded-lg border border-white/10 bg-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="bg-green-900 border border-white/20 text-white rounded-lg px-3 py-2"
         >
           <option value="">Tüm Formatlar</option>
           <option value="5v5">5v5</option>
