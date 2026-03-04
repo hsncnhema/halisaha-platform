@@ -90,11 +90,11 @@ export default function KayitPage() {
   };
 
   return (
-    <div className="mx-auto max-w-sm px-4 pb-16 pt-20">
-      <h1 className="mb-1 text-2xl font-extrabold">⚽ Futbolcu Kayıt</h1>
-      <p className="mb-8 text-sm text-gray-400">
+    <div className="mx-auto min-h-screen bg-green-950 max-w-sm px-4 pb-16 pt-20">
+      <h1 className="mb-1 text-2xl font-extrabold text-white">⚽ Futbolcu Kayıt</h1>
+      <p className="mb-8 text-sm text-white/40">
         Zaten hesabın var mı?{' '}
-        <Link href="/login" className="font-semibold text-green-600 hover:underline">
+        <Link href="/login" className="font-semibold text-green-400 hover:underline">
           Giriş yap
         </Link>
       </p>
@@ -108,9 +108,9 @@ export default function KayitPage() {
       </button>
 
       <div className="mb-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-400">veya</span>
-        <div className="h-px flex-1 bg-gray-200" />
+        <div className="h-px flex-1 bg-white/10" />
+        <span className="text-xs text-white/30">veya</span>
+        <div className="h-px flex-1 bg-white/10" />
       </div>
 
       <form onSubmit={emailIleKayit} className="flex flex-col gap-3">
@@ -119,34 +119,34 @@ export default function KayitPage() {
           placeholder="Adın Soyadın"
           value={ad}
           onChange={(e) => setAd(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-green-400 focus:outline-none"
+          className="w-full rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm focus:border-green-400 focus:outline-none"
         />
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-green-400 focus:outline-none"
+          className="w-full rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm focus:border-green-400 focus:outline-none"
         />
         <input
           type="password"
           placeholder="Şifre (en az 6 karakter)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-green-400 focus:outline-none"
+          className="w-full rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm focus:border-green-400 focus:outline-none"
         />
         {error && <p className="text-xs text-red-500">{error}</p>}
         <button
           type="submit"
           disabled={yukleniyor}
-          className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+          className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
         >
           {yukleniyor ? 'Kayıt oluşturuluyor...' : 'Kayıt Ol'}
         </button>
       </form>
 
-      <div className="mt-8 border-t border-gray-100 pt-6 text-center">
-        <Link href="/kayit/halisaha" className="text-sm font-semibold text-green-600 hover:underline">
+      <div className="mt-8 border-t border-white/10 pt-6 text-center">
+        <Link href="/kayit/halisaha" className="text-sm font-semibold text-green-400 hover:underline">
           🏟️ Halı saha olarak kayıt ol →
         </Link>
       </div>

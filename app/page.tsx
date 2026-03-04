@@ -1,53 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getIlanlar, getSahalar, supabase } from '@/lib/supabase';
+import { getIlanlar, getSahalar } from '@/lib/supabase';
+import { getKoordinat } from '@/lib/turkiye';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import Link from 'next/link';
 
-const ISTANBUL_MERKEZ = { lat: 41.0082, lng: 28.9784 };
-
-const ILCE_KOORDINATLARI: Record<string, { lat: number; lng: number }> = {
-  Adalar: { lat: 40.8713, lng: 29.1253 },
-  Arnavutköy: { lat: 41.1853, lng: 28.7397 },
-  Ataşehir: { lat: 40.9833, lng: 29.1167 },
-  Avcılar: { lat: 40.9798, lng: 28.7219 },
-  Bağcılar: { lat: 41.0397, lng: 28.8561 },
-  Bahçelievler: { lat: 40.9997, lng: 28.8519 },
-  Bakırköy: { lat: 40.9819, lng: 28.8719 },
-  Başakşehir: { lat: 41.0942, lng: 28.8019 },
-  Bayrampaşa: { lat: 41.0453, lng: 28.9153 },
-  Beşiktaş: { lat: 41.0422, lng: 29.0061 },
-  Beykoz: { lat: 41.1333, lng: 29.1167 },
-  Beylikdüzü: { lat: 40.9819, lng: 28.6419 },
-  Beyoğlu: { lat: 41.0333, lng: 28.9833 },
-  Büyükçekmece: { lat: 41.0219, lng: 28.5819 },
-  Çatalca: { lat: 41.1433, lng: 28.4619 },
-  Çekmeköy: { lat: 41.0319, lng: 29.1819 },
-  Esenler: { lat: 41.0433, lng: 28.8753 },
-  Esenyurt: { lat: 41.0319, lng: 28.6753 },
-  Eyüpsultan: { lat: 41.0753, lng: 28.9319 },
-  Fatih: { lat: 41.0186, lng: 28.9397 },
-  Gaziosmanpaşa: { lat: 41.0653, lng: 28.9119 },
-  Güngören: { lat: 41.0219, lng: 28.8719 },
-  Kadıköy: { lat: 40.9819, lng: 29.0819 },
-  Kağıthane: { lat: 41.0753, lng: 28.9719 },
-  Kartal: { lat: 40.9053, lng: 29.1853 },
-  Küçükçekmece: { lat: 41.0019, lng: 28.7719 },
-  Maltepe: { lat: 40.9353, lng: 29.1319 },
-  Pendik: { lat: 40.8753, lng: 29.2319 },
-  Sancaktepe: { lat: 41.0019, lng: 29.2219 },
-  Sarıyer: { lat: 41.1653, lng: 29.0519 },
-  Silivri: { lat: 41.0733, lng: 28.2453 },
-  Sultanbeyli: { lat: 40.9619, lng: 29.2653 },
-  Sultangazi: { lat: 41.1053, lng: 28.8719 },
-  Şile: { lat: 41.1753, lng: 29.6119 },
-  Şişli: { lat: 41.0653, lng: 28.9919 },
-  Tuzla: { lat: 40.8153, lng: 29.2953 },
-  Ümraniye: { lat: 41.0153, lng: 29.1253 },
-  Üsküdar: { lat: 41.0253, lng: 29.0153 },
-  Zeytinburnu: { lat: 41.0019, lng: 28.9019 },
-};
+const TURKIYE_MERKEZ = { lat: 39.0, lng: 35.0 };
 
 const kalanSure = (silinmeZamani: string) => {
   const fark = new Date(silinmeZamani).getTime() - Date.now();
@@ -61,8 +20,16 @@ const kalanSure = (silinmeZamani: string) => {
 type SahaItem = Awaited<ReturnType<typeof getSahalar>>[number];
 type IlanItem = Awaited<ReturnType<typeof getIlanlar>>[number];
 
+const YILDIZLAR = Array.from({ length: 36 }, (_, i) => ({
+  id: i,
+  top: `${Math.floor((i * 7 + 13) % 100)}%`,
+  left: `${Math.floor((i * 11 + 7) % 100)}%`,
+  size: (i % 3) + 1,
+  delay: `${(i * 0.3) % 4}s`,
+  duration: `${3 + (i % 3)}s`,
+}));
+
 export default function AnaSayfa() {
-  const [kullanici, setKullanici] = useState<{ id: string; ad: string; tip: string | null } | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [sahalar, setSahalar] = useState<SahaItem[]>([]);
   const [ilanlar, setIlanlar] = useState<IlanItem[]>([]);
@@ -70,29 +37,14 @@ export default function AnaSayfa() {
   useEffect(() => {
     const yukle = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          const { data: profile } = await supabase.from('profiles').select('ad, tip').eq('id', user.id).maybeSingle();
-          setKullanici({
-            id: user.id,
-            ad: profile?.ad || user.user_metadata?.full_name || user.user_metadata?.name || 'Oyuncu',
-            tip: profile?.tip,
-          });
-        } else {
-          setKullanici(null);
-        }
-
         const [sahalarData, ilanlarData] = await Promise.all([getSahalar(), getIlanlar(5)]);
-        const normalizeSahalar = (sahalarData as SahaItem[]).map((s) => {
-          if (!s.lat && s.ilce && ILCE_KOORDINATLARI[s.ilce]) {
-            return { ...s, lat: ILCE_KOORDINATLARI[s.ilce].lat, lng: ILCE_KOORDINATLARI[s.ilce].lng };
-          }
-          return s;
-        }).filter((s) => s.lat && s.lng) as SahaItem[];
-
+        const normalizeSahalar = (sahalarData as SahaItem[])
+          .map((s) => {
+            if (typeof s.lat === 'number' && typeof s.lng === 'number') return s;
+            const coord = getKoordinat(s.ilce, s.il);
+            return { ...s, lat: coord.lat, lng: coord.lng };
+          })
+          .filter((s) => typeof s.lat === 'number' && typeof s.lng === 'number') as SahaItem[];
         setSahalar(normalizeSahalar);
         setIlanlar(ilanlarData as IlanItem[]);
       } catch (err) {
@@ -101,173 +53,239 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       }
     };
-
     yukle();
   }, []);
 
-  if (yukleniyor) {
-    return (
-      <div className="mx-auto mt-24 max-w-2xl px-4 text-center">
-        <p className="text-gray-500">Yükleniyor...</p>
-      </div>
-    );
-  }
+  if (yukleniyor) return null;
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6">
-      <div className="mb-10 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-green-600">⚽ HalıSaha</h1>
-        <div>
-          {kullanici ? (
-            <div className="flex items-center gap-4">
-              <span className="hidden text-sm text-gray-500 sm:block">Merhaba, {kullanici.ad || 'Oyuncu'}</span>
-              <Link href="/profil" className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700">
-                Profilim
-              </Link>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Link href="/login" className="rounded-lg border-2 border-green-600 px-4 py-2 text-sm font-semibold text-green-600 transition hover:bg-green-50">
-                Giriş Yap
-              </Link>
-              <Link href="/kayit" className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700">
-                Kayıt Ol
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="min-h-screen bg-green-950">
 
-      <div className="mb-10 text-center">
-        <h2 className="mb-3 text-3xl font-extrabold leading-tight sm:text-4xl">
-          Yakınındaki halı sahaları bul, <span className="text-green-600">müsait saatleri gör.</span>
-        </h2>
-        <p className="mb-6 text-base text-gray-500">Sahayı bul, WhatsApp&apos;tan rezervasyon yap. Oyuncu ara, takım bul.</p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/harita" className="rounded-lg bg-green-600 px-6 py-3 text-base font-bold text-white transition hover:bg-green-700">
-            🗺️ Haritada Ara
-          </Link>
-          <Link href="/ilanlar" className="rounded-lg border-2 border-green-600 px-6 py-3 text-base font-bold text-green-600 transition hover:bg-green-50">
-            📋 İlan Panosu
-          </Link>
-        </div>
-      </div>
-
-      <div className="mb-10">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-extrabold">🏟️ İstanbul&apos;da {sahalar.length} aktif saha</h3>
-          <Link href="/harita" className="text-sm font-semibold text-green-600 hover:underline">
-            Tümünü haritada gör →
-          </Link>
-        </div>
-        <div className="h-64 overflow-hidden rounded-2xl border border-green-100 sm:h-80">
-          <APIProvider apiKey={apiKey ?? ''}>
-            <Map
-              defaultCenter={ISTANBUL_MERKEZ}
-              defaultZoom={10}
-              mapId="halisaha-mini-map"
-              style={{ width: '100%', height: '100%' }}
-              gestureHandling="cooperative"
-              disableDefaultUI
-            >
-              {sahalar.map((saha) => (
-                <AdvancedMarker
-                  key={saha.id}
-                  position={{ lat: saha.lat as number, lng: saha.lng as number }}
-                  onClick={() => {
-                    window.location.href = `/saha/${saha.id}`;
-                  }}
-                >
-                  <div className="cursor-pointer whitespace-nowrap rounded-full border-2 border-white bg-green-600 px-2 py-1 text-xs font-bold text-white shadow-md">
-                    🏟️ {saha.sahaAdi}
-                  </div>
-                </AdvancedMarker>
-              ))}
-            </Map>
-          </APIProvider>
-        </div>
-      </div>
-
-      {sahalar.length > 0 && (
-        <div className="mb-10">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-base font-extrabold">🏟️ Sahalar</h3>
-            <Link href="/sahalar" className="text-sm font-semibold text-green-600 hover:underline">
-              Tümünü gör →
+      {/* HERO */}
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-green-950 via-green-900 to-green-950">
+        {YILDIZLAR.map((y) => (
+          <span
+            key={y.id}
+            className="pointer-events-none absolute rounded-full bg-green-950 opacity-40"
+            style={{
+              top: y.top,
+              left: y.left,
+              width: `${y.size}px`,
+              height: `${y.size}px`,
+              animation: `pulse ${y.duration} ${y.delay} infinite`,
+            }}
+          />
+        ))}
+        <div className="relative z-10 mx-auto max-w-3xl px-4 py-24 text-center">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 backdrop-blur-sm">
+            <span className="h-2 w-2 rounded-full bg-green-400" />
+            <span className="text-sm font-medium text-white/80">Türkiye&apos;nin Halı Saha Platformu</span>
+          </div>
+          <h1 className="mb-6 text-5xl font-black leading-tight text-white md:text-7xl">
+            Sahaya çık,<br />
+            <span className="text-green-400">takımını bul.</span>
+          </h1>
+          <p className="mx-auto mb-10 max-w-lg text-lg text-white/60">
+            Saha bul, oyuncu ara, takım kur. Halı sahada oynamak hiç bu kadar kolay olmamıştı.
+          </p>
+          <div className="mb-6 flex flex-wrap justify-center gap-4">
+            <Link href="/harita" className="rounded-xl bg-green-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-green-500/25 transition hover:bg-green-400">
+              Saha Bul
+            </Link>
+            <Link href="/ilanlar" className="rounded-xl border-2 border-white/20 px-8 py-3.5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/5">
+              Oyuncu Ara
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {sahalar.slice(0, 4).map((saha) => (
-              <Link
-                key={saha.id}
-                href={`/saha/${saha.id}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-green-100 bg-white px-4 py-3 transition hover:border-green-300 hover:shadow-md"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold">{saha.sahaAdi}</p>
-                  <p className="mt-0.5 text-xs text-gray-500">📍 {saha.ilce} · {saha.format}</p>
-                </div>
-                <span className="shrink-0 text-sm font-extrabold text-green-600">{saha.fiyat ? `${saha.fiyat}₺` : '—'}</span>
-              </Link>
-            ))}
+          <div className="mb-16 flex justify-center gap-4">
+            <a href="#" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-sm text-white backdrop-blur-sm transition hover:bg-white/15 hover:border-white/30">
+              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              <div className="text-left">
+                <div className="text-xs leading-none text-white/50">Download on the</div>
+                <div className="text-base font-bold leading-tight">App Store</div>
+              </div>
+            </a>
+            <a href="#" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-sm text-white backdrop-blur-sm transition hover:bg-white/15 hover:border-white/30">
+              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.49c.41.41 1.02.41 1.63.2l11.02-6.37-2.73-2.73-9.92 7.27c-.41.41-.41 1.22 0 1.63zm-.61-2.24V2.75c0-.61.2-1.02.61-1.22L13.1 11.45 3.18 21.37c-.41-.2-.61-.61-.61-1.12zM20.4 10.43l-3.06-1.73-3.06 3.06 2.86 2.86 3.27-1.94c.82-.41.82-1.63-.01-2.25zM5.62 1.25 16.33 7.4l-2.73 2.73L5.01.98c.2-.2.41-.2.61.27z"/></svg>
+              <div className="text-left">
+                <div className="text-xs leading-none text-white/50">GET IT ON</div>
+                <div className="text-base font-bold leading-tight">Google Play</div>
+              </div>
+            </a>
           </div>
-          {sahalar.length > 4 && (
-            <div className="mt-4 text-center">
-              <Link href="/sahalar" className="inline-block rounded-lg bg-green-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-green-700">
-                Tüm Sahaları Gör ({sahalar.length} saha)
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-
-      {ilanlar.length > 0 && (
-        <div className="mb-10">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-base font-extrabold">📋 Son İlanlar</h3>
-            <Link href="/ilanlar" className="text-sm font-semibold text-green-600 hover:underline">
-              Tümünü gör →
-            </Link>
-          </div>
-          <div className="flex flex-col gap-3">
-            {ilanlar.map((ilan) => (
-              <div key={ilan.id} className="flex items-start justify-between gap-3 rounded-xl border border-green-100 bg-white px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                        ilan.kategori === 'Oyuncu Arıyorum' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {ilan.kategori}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">📍 {ilan.ilce}</span>
-                  </div>
-                  <p className="truncate text-sm font-bold">{ilan.baslik}</p>
-                  {ilan.tarih && <p className="mt-0.5 text-xs font-semibold text-green-600">🗓 {ilan.tarih} {ilan.saat}</p>}
-                </div>
-                <span className="shrink-0 text-xs text-gray-400">⏱ {kalanSure(ilan.silinmeZamani)}</span>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { deger: '500+', etiket: 'Saha' },
+              { deger: '10K+', etiket: 'Oyuncu' },
+              { deger: '50K+', etiket: 'Maç' },
+              { deger: '81', etiket: 'İl' },
+            ].map((item) => (
+              <div key={item.etiket} className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 backdrop-blur-sm">
+                <div className="text-2xl font-black text-white">{item.deger}</div>
+                <div className="text-sm text-white/50">{item.etiket}</div>
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ÖZELLİKLER */}
+      <section className="bg-green-950 py-16">
+        <div className="mx-auto max-w-4xl px-4">
+          <h2 className="mb-10 text-center text-2xl font-black text-white">Her şey bir arada</h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[
+              { icon: '⚽', baslik: 'Saha Bul', aciklama: 'Çevrendeki sahaları keşfet, boş saatleri gör.' },
+              { icon: '👤', baslik: 'Oyuncu Profili', aciklama: 'Mevkini ve seviyeni belirle, seni görsünler.' },
+              { icon: '👥', baslik: 'Takım Kur', aciklama: 'Takımını oluştur, kadroyu tamamla.' },
+              { icon: '📋', baslik: 'İlan Panosu', aciklama: 'Oyuncu ara, takım bul, maç ayarla.' },
+            ].map((item) => (
+              <div key={item.baslik} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-green-600/20 text-lg">
+                  {item.icon}
+                </div>
+                <div className="mb-1 text-sm font-bold text-white">{item.baslik}</div>
+                <div className="text-xs leading-relaxed text-white/40">{item.aciklama}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HARİTA & SAHALAR */}
+      <section className="bg-green-900/30 py-16">
+        <div className="mx-auto max-w-4xl px-4">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-extrabold text-white">🏟️ Turkiye&apos;de {sahalar.length} aktif saha</h2>
+            <Link href="/harita" className="text-sm font-semibold text-green-400 hover:underline">Tümünü haritada gör →</Link>
+          </div>
+          <div className="mb-8 h-64 overflow-hidden rounded-2xl border border-white/10 sm:h-80">
+            <APIProvider apiKey={apiKey ?? ''}>
+              <Map defaultCenter={TURKIYE_MERKEZ} defaultZoom={6} mapId="halisaha-mini-map" style={{ width: '100%', height: '100%' }} gestureHandling="cooperative" disableDefaultUI>
+                {sahalar.map((saha) => (
+                  <AdvancedMarker key={saha.id} position={{ lat: saha.lat as number, lng: saha.lng as number }} onClick={() => { window.location.href = `/saha/${saha.id}`; }}>
+                    <div className="cursor-pointer whitespace-nowrap rounded-full border-2 border-white bg-green-600 px-2 py-1 text-xs font-bold text-white shadow-md">
+                      🏟️ {saha.sahaAdi}
+                    </div>
+                  </AdvancedMarker>
+                ))}
+              </Map>
+            </APIProvider>
+          </div>
+          {sahalar.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {sahalar.slice(0, 4).map((saha) => (
+                  <Link key={saha.id} href={`/saha/${saha.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-green-500/40 hover:bg-white/10">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-white">{saha.sahaAdi}</p>
+                      <p className="mt-0.5 text-xs text-white/40">📍 {saha.ilce} · {saha.format}</p>
+                    </div>
+                    <span className="shrink-0 text-sm font-extrabold text-green-400">{saha.fiyat ? `${saha.fiyat}₺` : '—'}</span>
+                  </Link>
+                ))}
+              </div>
+              {sahalar.length > 4 && (
+                <div className="mt-6 text-center">
+                  <Link href="/sahalar" className="inline-block rounded-lg bg-green-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-green-500">
+                    Tüm Sahaları Gör ({sahalar.length} saha)
+                  </Link>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* SON İLANLAR */}
+      {ilanlar.length > 0 && (
+        <section className="bg-green-950 py-16">
+          <div className="mx-auto max-w-4xl px-4">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-extrabold text-white">📋 Son İlanlar</h2>
+              <Link href="/ilanlar" className="text-sm font-semibold text-green-400 hover:underline">Tümünü gör →</Link>
+            </div>
+            <div className="flex flex-col gap-3">
+              {ilanlar.map((ilan) => (
+                <div key={ilan.id} className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${ilan.kategori === 'Oyuncu Arıyorum' ? 'bg-green-900/60 text-green-300' : 'bg-blue-900/60 text-blue-300'}`}>
+                        {ilan.kategori}
+                      </span>
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white/50">📍 {ilan.ilce}</span>
+                    </div>
+                    <p className="truncate text-sm font-bold text-white">{ilan.baslik}</p>
+                    {ilan.tarih && <p className="mt-0.5 text-xs font-semibold text-green-400">🗓 {ilan.tarih} {ilan.saat}</p>}
+                  </div>
+                  <span className="shrink-0 text-xs text-white/30">⏱ {kalanSure(ilan.silinmeZamani)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          { icon: '🗺️', baslik: 'Haritada Keşfet', aciklama: 'Çevrendeki sahaları harita üzerinde gör. Boş saatler yeşil, dolu saatler kırmızı.' },
-          { icon: '📋', baslik: 'İlan Panosu', aciklama: 'Oyuncu ara veya takım bul. İlçene özel ilanları gör.' },
-          { icon: '💬', baslik: 'WhatsApp ile Rezervasyon', aciklama: 'Tek tıkla sahaya yaz. Mesajın otomatik hazırlanır.' },
-        ].map((item, i) => (
-          <div key={i} className="rounded-2xl border border-green-100 bg-white p-5">
-            <div className="mb-3 text-3xl">{item.icon}</div>
-            <div className="mb-1 text-sm font-bold">{item.baslik}</div>
-            <div className="text-xs leading-relaxed text-gray-500">{item.aciklama}</div>
+      {/* 3 ADIMDA BAŞLA */}
+      <section className="bg-green-900/30 py-16">
+        <div className="mx-auto max-w-4xl px-4">
+          <h2 className="mb-8 text-center text-2xl font-black text-white">3 Adımda Başla</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              { adim: '1', baslik: 'Kayıt Ol', aciklama: 'Ücretsiz profil oluştur.' },
+              { adim: '2', baslik: 'Keşfet', aciklama: 'Saha ve oyuncu bul.' },
+              { adim: '3', baslik: 'Sahaya Çık', aciklama: 'Maçını ayarla, oyna.' },
+            ].map((item) => (
+              <div key={item.adim} className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-lg font-extrabold text-white">
+                  {item.adim}
+                </div>
+                <div className="text-sm font-bold text-white">{item.baslik}</div>
+                <div className="mt-1 text-xs text-white/40">{item.aciklama}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-white/10 bg-green-950 pb-6 pt-10">
+        <div className="mx-auto max-w-4xl px-4">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+            <div>
+              <p className="mb-2 text-sm font-black tracking-wide text-green-400">sahagram</p>
+              <p className="text-xs leading-relaxed text-white/30">Saha bul, oyuncu ara, takım kur. Türkiye&apos;nin halı saha platformu.</p>
+            </div>
+            <div>
+              <h5 className="mb-3 text-xs font-bold uppercase tracking-wider text-white/30">Linkler</h5>
+              <div className="flex flex-col gap-2">
+                <Link href="/" className="text-sm text-white/50 transition hover:text-green-400">Ana Sayfa</Link>
+                <Link href="/sahalar" className="text-sm text-white/50 transition hover:text-green-400">Sahalar</Link>
+                <Link href="/harita" className="text-sm text-white/50 transition hover:text-green-400">Harita</Link>
+                <Link href="/ilanlar" className="text-sm text-white/50 transition hover:text-green-400">İlanlar</Link>
+              </div>
+            </div>
+            <div>
+              <h5 className="mb-3 text-xs font-bold uppercase tracking-wider text-white/30">Uygulamayı İndir</h5>
+              <div className="flex flex-col gap-2">
+                <a href="#" className="inline-flex w-fit items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-white transition hover:bg-white/20">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                  <span className="text-xs font-semibold">App Store</span>
+                </a>
+                <a href="#" className="inline-flex w-fit items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-white transition hover:bg-white/20">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.49c.41.41 1.02.41 1.63.2l11.02-6.37-2.73-2.73-9.92 7.27c-.41.41-.41 1.22 0 1.63zm-.61-2.24V2.75c0-.61.2-1.02.61-1.22L13.1 11.45 3.18 21.37c-.41-.2-.61-.61-.61-1.12zM20.4 10.43l-3.06-1.73-3.06 3.06 2.86 2.86 3.27-1.94c.82-.41.82-1.63-.01-2.25zM5.62 1.25 16.33 7.4l-2.73 2.73L5.01.98c.2-.2.41-.2.61.27z"/></svg>
+                  <span className="text-xs font-semibold">Google Play</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 border-t border-white/5 pt-4 text-center">
+            <p className="text-xs text-white/20">&copy; 2025 Sahagram. Tüm hakları saklıdır.</p>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 }

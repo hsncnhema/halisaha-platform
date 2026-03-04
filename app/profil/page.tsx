@@ -16,9 +16,9 @@ const ILCELER = [
 ];
 
 const selectClass =
-  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none';
+  'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
 const inputClass =
-  'w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none';
+  'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
 
 type ProfilForm = {
   uid: string;
@@ -133,37 +133,37 @@ export default function ProfilPage() {
   };
 
   if (yukleniyor) {
-    return <div className="mx-auto mt-24 max-w-xl px-4 text-center text-sm text-gray-400">Yükleniyor...</div>;
+    return <div className="mx-auto mt-24 max-w-xl px-4 text-center text-sm text-white/40">Yükleniyor...</div>;
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 pb-16 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl bg-green-950 px-4 pb-16 pt-6">
       <div className="mb-8 flex items-center justify-between">
-        <Link href="/" className="text-sm text-green-600 hover:underline">
+        <Link href="/" className="text-sm text-green-400 hover:underline">
           ← Ana Sayfa
         </Link>
         <button
           onClick={cikisYap}
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-500 transition hover:bg-gray-50"
+          className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 transition hover:bg-white/10"
         >
           Çıkış Yap
         </button>
       </div>
 
-      <div className="mb-4 rounded-2xl border border-gray-100 bg-white p-6 text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">⚽</div>
-        <h2 className="mb-1 text-xl font-extrabold">{kullanici.ad || 'İsimsiz Oyuncu'}</h2>
-        <p className="mb-3 text-sm text-gray-400">{kullanici.email}</p>
+      <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-600/20 text-3xl">⚽</div>
+        <h2 className="mb-1 text-xl font-extrabold text-white">{kullanici.ad || 'İsimsiz Oyuncu'}</h2>
+        <p className="mb-3 text-sm text-white/40">{kullanici.email}</p>
         <div className="flex flex-wrap justify-center gap-2">
-          {kullanici.mevki && <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-800">{kullanici.mevki}</span>}
-          {kullanici.seviye && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">{kullanici.seviye}</span>}
-          {kullanici.ilce && <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">📍 {kullanici.ilce}</span>}
+          {kullanici.mevki && <span className="rounded-full bg-green-900/60 px-2.5 py-0.5 text-xs font-bold text-green-300">{kullanici.mevki}</span>}
+          {kullanici.seviye && <span className="rounded-full bg-blue-900/60 px-2.5 py-0.5 text-xs font-bold text-blue-300">{kullanici.seviye}</span>}
+          {kullanici.ilce && <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/50">📍 {kullanici.ilce}</span>}
         </div>
-        {kullanici.bio && <p className="mt-3 text-sm leading-relaxed text-gray-400">{kullanici.bio}</p>}
+        {kullanici.bio && <p className="mt-3 text-sm leading-relaxed text-white/40">{kullanici.bio}</p>}
       </div>
 
       {basari && (
-        <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+        <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-400">
           ✅ Profil güncellendi!
         </div>
       )}
@@ -173,14 +173,14 @@ export default function ProfilPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setDuzenle(false)}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-500 transition hover:bg-gray-50"
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 transition hover:bg-white/10"
             >
               İptal
             </button>
             <button
               onClick={kaydet}
               disabled={kaydediliyor}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-gray-300"
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-white/10 disabled:text-white/30"
             >
               {kaydediliyor ? 'Kaydediliyor...' : 'Kaydet'}
             </button>
@@ -188,7 +188,7 @@ export default function ProfilPage() {
         ) : (
           <button
             onClick={() => setDuzenle(true)}
-            className="rounded-lg border border-green-600 bg-white px-4 py-2 text-sm font-semibold text-green-600 transition hover:bg-green-50"
+            className="rounded-lg border border-green-500 bg-white/5 px-4 py-2 text-sm font-semibold text-green-400 transition hover:bg-white/10"
           >
             ✏️ Düzenle
           </button>
@@ -197,12 +197,12 @@ export default function ProfilPage() {
 
       {duzenle ? (
         <div className="flex flex-col gap-3">
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Ad Soyad</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Ad Soyad</label>
             <input type="text" value={form.ad} onChange={(e) => setForm({ ...form, ad: e.target.value })} className={inputClass} />
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Mevki</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Mevki</label>
             <select value={form.mevki} onChange={(e) => setForm({ ...form, mevki: e.target.value })} className={selectClass}>
               <option value="">Seç</option>
               <option value="Kaleci">Kaleci</option>
@@ -211,8 +211,8 @@ export default function ProfilPage() {
               <option value="Forvet">Forvet</option>
             </select>
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Baskın Ayak</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Baskın Ayak</label>
             <select value={form.baskinAyak} onChange={(e) => setForm({ ...form, baskinAyak: e.target.value })} className={selectClass}>
               <option value="">Seç</option>
               <option value="Sağ">Sağ</option>
@@ -220,8 +220,8 @@ export default function ProfilPage() {
               <option value="Her İkisi">Her İkisi</option>
             </select>
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Seviye</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Seviye</label>
             <select value={form.seviye} onChange={(e) => setForm({ ...form, seviye: e.target.value })} className={selectClass}>
               <option value="">Seç</option>
               <option value="Casual">Casual</option>
@@ -230,8 +230,8 @@ export default function ProfilPage() {
               <option value="Profesyonel">Profesyonel</option>
             </select>
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">İlçe</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">İlçe</label>
             <select value={form.ilce} onChange={(e) => setForm({ ...form, ilce: e.target.value })} className={selectClass}>
               <option value="">Seç</option>
               {ILCELER.map((i) => (
@@ -241,8 +241,8 @@ export default function ProfilPage() {
               ))}
             </select>
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Yaş Aralığı</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Yaş Aralığı</label>
             <select value={form.yasAraligi} onChange={(e) => setForm({ ...form, yasAraligi: e.target.value })} className={selectClass}>
               <option value="">Belirtmek istemiyorum</option>
               <option value="18-25">18 — 25</option>
@@ -250,15 +250,15 @@ export default function ProfilPage() {
               <option value="35+">35+</option>
             </select>
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-white p-4">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Hakkında</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Hakkında</label>
             <textarea
               value={form.bio}
               onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 160) })}
               rows={3}
-              className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
+              className="w-full resize-y rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none"
             />
-            <p className="mt-1 text-right text-xs text-gray-300">{form.bio.length}/160</p>
+            <p className="mt-1 text-right text-xs text-white/20">{form.bio.length}/160</p>
           </div>
         </div>
       ) : (
@@ -270,9 +270,9 @@ export default function ProfilPage() {
           ]
             .filter((item) => item.value)
             .map((item, i) => (
-              <div key={i} className="rounded-2xl border border-gray-100 bg-white px-4 py-3">
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-400">{item.label}</label>
-                <p className="text-sm font-semibold">{item.value}</p>
+              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/30">{item.label}</label>
+                <p className="text-sm font-semibold text-white">{item.value}</p>
               </div>
             ))}
         </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { ILCELER, ILLER } from '@/lib/turkiye';
 
 type GeocodeResponse = {
   status?: string;
@@ -67,10 +68,11 @@ export default function HalisahaKayitPage() {
   const [telefon, setTelefon] = useState('');
   const [sokak, setSokak] = useState('');
   const [ilce, setIlce] = useState('');
-  const [il, setIl] = useState('Istanbul');
+  const [il, setIl] = useState('');
   const [error, setError] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const router = useRouter();
+  const ilceler = il ? ILCELER(il) : [];
 
   const kayitOl = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,9 +170,9 @@ export default function HalisahaKayitPage() {
   };
 
   return (
-    <div className="mx-auto mt-20 max-w-md px-4">
-      <h1 className="mb-2 text-2xl font-bold">Hali Saha Kayit</h1>
-      <p className="mb-6 text-sm text-gray-500">Kaydiniz admin onayindan sonra yayina alinacaktir.</p>
+    <div className="mx-auto mt-20 min-h-screen bg-green-950 max-w-md px-4">
+      <h1 className="mb-2 text-2xl font-bold text-white">Hali Saha Kayit</h1>
+      <p className="mb-6 text-sm text-white/40">Kaydiniz admin onayindan sonra yayina alinacaktir.</p>
 
       <form onSubmit={kayitOl} className="space-y-3">
         <input
@@ -178,62 +180,76 @@ export default function HalisahaKayitPage() {
           placeholder="Saha Adi *"
           value={sahaAdi}
           onChange={(e) => setSahaAdi(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm outline-none focus:border-green-400"
         />
         <input
           type="tel"
           placeholder="Telefon / WhatsApp *"
           value={telefon}
           onChange={(e) => setTelefon(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm outline-none focus:border-green-400"
         />
         <input
           type="email"
           placeholder="Email *"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm outline-none focus:border-green-400"
         />
         <input
           type="password"
           placeholder="Sifre (en az 6 karakter)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm outline-none focus:border-green-400"
         />
         <input
           type="text"
           placeholder="Sokak / Mahalle / Acik Adres *"
           value={sokak}
           onChange={(e) => setSokak(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-3 text-sm outline-none focus:border-green-400"
         />
-        <input
-          type="text"
-          placeholder="Ilce *"
+        <select
+          value={il}
+          onChange={(e) => {
+            setIl(e.target.value);
+            setIlce('');
+          }}
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white px-4 py-3 text-sm outline-none focus:border-green-400"
+        >
+          <option value="">Il sec *</option>
+          {ILLER.map((sehir) => (
+            <option key={sehir} value={sehir}>
+              {sehir}
+            </option>
+          ))}
+        </select>
+        <select
           value={ilce}
           onChange={(e) => setIlce(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
-        />
-        <input
-          type="text"
-          placeholder="Il *"
-          value={il}
-          onChange={(e) => setIl(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-400"
-        />
+          disabled={!il}
+          className="w-full rounded-lg bg-white/10 border border-white/10 text-white px-4 py-3 text-sm outline-none focus:border-green-400"
+        >
+          <option value="">{il ? 'Ilce sec *' : 'Once il sec *'}</option>
+          {ilceler.map((seciliIlce) => (
+            <option key={seciliIlce} value={seciliIlce}>
+              {seciliIlce}
+            </option>
+          ))}
+        </select>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
           type="submit"
           disabled={kaydediliyor}
-          className="w-full rounded-lg bg-green-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+          className="w-full rounded-lg bg-green-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
         >
           {kaydediliyor ? 'Gonderiliyor...' : 'Basvuru Gonder'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-400">
-        <Link href="/login" className="text-green-600 hover:underline">
+      <p className="mt-6 text-center text-sm text-white/40">
+        <Link href="/login" className="text-green-400 hover:underline">
           Giris sayfasina don
         </Link>
       </p>

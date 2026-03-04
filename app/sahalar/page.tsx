@@ -1,28 +1,9 @@
 'use client';
 
 import { getSahalar } from '@/lib/supabase';
+import { ILCELER, ILLER } from '@/lib/turkiye';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-const ILLER: Record<string, string[]> = {
-  İstanbul: [
-    'Adalar', 'Arnavutköy', 'Ataşehir', 'Avcılar', 'Bağcılar', 'Bahçelievler',
-    'Bakırköy', 'Başakşehir', 'Bayrampaşa', 'Beşiktaş', 'Beykoz', 'Beylikdüzü',
-    'Beyoğlu', 'Büyükçekmece', 'Çatalca', 'Çekmeköy', 'Esenler', 'Esenyurt',
-    'Eyüpsultan', 'Fatih', 'Gaziosmanpaşa', 'Güngören', 'Kadıköy', 'Kağıthane',
-    'Kartal', 'Küçükçekmece', 'Maltepe', 'Pendik', 'Sancaktepe', 'Sarıyer',
-    'Silivri', 'Sultanbeyli', 'Sultangazi', 'Şile', 'Şişli', 'Tuzla',
-    'Ümraniye', 'Üsküdar', 'Zeytinburnu',
-  ],
-  Ankara: [
-    'Altındağ', 'Çankaya', 'Etimesgut', 'Keçiören', 'Mamak', 'Pursaklar',
-    'Sincan', 'Yenimahalle',
-  ],
-  İzmir: [
-    'Balçova', 'Bayraklı', 'Bornova', 'Buca', 'Çiğli', 'Gaziemir',
-    'Güzelbahçe', 'Karabağlar', 'Karşıyaka', 'Konak', 'Narlıdere', 'Torbalı',
-  ],
-};
 
 type SahaItem = Awaited<ReturnType<typeof getSahalar>>[number];
 
@@ -45,7 +26,7 @@ export default function SahalarPage() {
     yukle();
   }, []);
 
-  const ilceler = filtre.il ? ILLER[filtre.il] || [] : Object.values(ILLER).flat().sort();
+  const ilceler = filtre.il ? ILCELER(filtre.il) : [];
 
   const filtrelenmis = sahalar.filter((s) => {
     if (filtre.il && s.il !== filtre.il) return false;
@@ -87,15 +68,15 @@ export default function SahalarPage() {
   const filtreVarMi = filtre.il || filtre.ilce || filtre.format || filtre.arama;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6">
+    <div className="min-h-screen bg-green-950 mx-auto max-w-3xl px-4 pb-16 pt-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/" className="text-sm text-green-600 hover:underline">
+          <Link href="/" className="text-sm text-green-400 hover:underline">
             ← Ana Sayfa
           </Link>
-          <h1 className="mt-1 text-2xl font-extrabold">🏟️ Halı Sahalar</h1>
+          <h1 className="mt-1 text-2xl font-extrabold text-white">🏟️ Halı Sahalar</h1>
         </div>
-        <span className="text-sm font-medium text-gray-400">{filtrelenmis.length} saha</span>
+        <span className="text-sm font-medium text-white/40">{filtrelenmis.length} saha</span>
       </div>
 
       <div className="mb-3">
@@ -104,7 +85,7 @@ export default function SahalarPage() {
           placeholder="🔍 Saha adı ara..."
           value={filtre.arama}
           onChange={(e) => setFiltre({ ...filtre, arama: e.target.value })}
-          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+          className="w-full rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-white/30 px-4 py-2.5 text-sm focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-400"
         />
       </div>
 
@@ -112,10 +93,10 @@ export default function SahalarPage() {
         <select
           value={filtre.il}
           onChange={(e) => setFiltre({ ...filtre, il: e.target.value, ilce: '' })}
-          className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="cursor-pointer rounded-lg border border-white/10 bg-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
         >
           <option value="">Tüm İller</option>
-          {Object.keys(ILLER).map((il) => (
+          {ILLER.map((il) => (
             <option key={il} value={il}>
               {il}
             </option>
@@ -125,9 +106,10 @@ export default function SahalarPage() {
         <select
           value={filtre.ilce}
           onChange={(e) => setFiltre({ ...filtre, ilce: e.target.value })}
-          className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          disabled={!filtre.il}
+          className="cursor-pointer rounded-lg border border-white/10 bg-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
         >
-          <option value="">Tüm İlçeler</option>
+          <option value="">{filtre.il ? 'Tum Ilceler' : 'Once il sec'}</option>
           {ilceler.map((i) => (
             <option key={i} value={i}>
               {i}
@@ -138,7 +120,7 @@ export default function SahalarPage() {
         <select
           value={filtre.format}
           onChange={(e) => setFiltre({ ...filtre, format: e.target.value })}
-          className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+          className="cursor-pointer rounded-lg border border-white/10 bg-white/10 text-white px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
         >
           <option value="">Tüm Formatlar</option>
           <option value="5v5">5v5</option>
@@ -150,7 +132,7 @@ export default function SahalarPage() {
         {filtreVarMi && (
           <button
             onClick={() => setFiltre({ il: '', ilce: '', format: '', arama: '' })}
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"
           >
             Temizle ✕
           </button>
@@ -158,12 +140,12 @@ export default function SahalarPage() {
       </div>
 
       {yukleniyor ? (
-        <div className="py-16 text-center text-sm text-gray-400">Yükleniyor...</div>
+        <div className="py-16 text-center text-sm text-white/40">Yükleniyor...</div>
       ) : filtrelenmis.length === 0 ? (
-        <div className="rounded-2xl border border-gray-100 bg-white py-16 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center">
           <p className="mb-3 text-4xl">🏟️</p>
-          <p className="font-bold text-gray-700">Bu kriterlere uygun saha bulunamadı</p>
-          <p className="mt-1 text-sm text-gray-400">Filtreyi değiştirmeyi dene</p>
+          <p className="font-bold text-white">Bu kriterlere uygun saha bulunamadı</p>
+          <p className="mt-1 text-sm text-white/40">Filtreyi değiştirmeyi dene</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -171,16 +153,16 @@ export default function SahalarPage() {
             const slots = bosSlotSayisi(saha);
             return (
               <Link key={saha.id} href={`/saha/${saha.id}`} className="block no-underline">
-                <div className="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 transition hover:border-green-300 hover:shadow-sm">
+                <div className="cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-green-500/40 hover:bg-white/10">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="mb-0.5 text-base font-extrabold">🏟️ {saha.sahaAdi}</h3>
-                      <p className="text-sm text-gray-400">📍 {[saha.il, saha.ilce].filter(Boolean).join(' / ')}</p>
+                      <h3 className="mb-0.5 text-base font-extrabold text-white">🏟️ {saha.sahaAdi}</h3>
+                      <p className="text-sm text-white/40">📍 {[saha.il, saha.ilce].filter(Boolean).join(' / ')}</p>
                     </div>
                     {slots && (
                       <span
                         className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
-                          slots.bos > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                          slots.bos > 0 ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'
                         }`}
                       >
                         {slots.bos > 0 ? `✅ ${slots.bos} boş slot` : '❌ Bugün dolu'}
@@ -190,17 +172,17 @@ export default function SahalarPage() {
 
                   <div className="flex flex-wrap gap-2">
                     {saha.format && (
-                      <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700">
+                      <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-300">
                         {saha.format}
                       </span>
                     )}
                     {saha.fiyat && (
-                      <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-white/50">
                         {saha.fiyat} ₺ / saat
                       </span>
                     )}
                     {saha.acilisSaati && saha.kapanisSaati && (
-                      <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-white/50">
                         🕐 {saha.acilisSaati} - {saha.kapanisSaati}
                       </span>
                     )}

@@ -1,26 +1,18 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
+import { ILCELER, ILLER } from '@/lib/turkiye';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const ILCELER = [
-  'Adalar', 'Arnavutköy', 'Ataşehir', 'Avcılar', 'Bağcılar', 'Bahçelievler',
-  'Bakırköy', 'Başakşehir', 'Bayrampaşa', 'Beşiktaş', 'Beykoz', 'Beylikdüzü',
-  'Beyoğlu', 'Büyükçekmece', 'Çatalca', 'Çekmeköy', 'Esenler', 'Esenyurt',
-  'Eyüpsultan', 'Fatih', 'Gaziosmanpaşa', 'Güngören', 'Kadıköy', 'Kağıthane',
-  'Kartal', 'Küçükçekmece', 'Maltepe', 'Pendik', 'Sancaktepe', 'Sarıyer',
-  'Silivri', 'Sultanbeyli', 'Sultangazi', 'Şile', 'Şişli', 'Tuzla',
-  'Ümraniye', 'Üsküdar', 'Zeytinburnu',
-];
-
 const selectClass =
-  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none';
+  'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
 
 export default function ProfilTamamlaPage() {
   const [mevki, setMevki] = useState('');
   const [baskinAyak, setBaskinAyak] = useState('');
   const [seviye, setSeviye] = useState('');
+  const [il, setIl] = useState('');
   const [ilce, setIlce] = useState('');
   const [yasAraligi, setYasAraligi] = useState('');
   const [bio, setBio] = useState('');
@@ -28,10 +20,12 @@ export default function ProfilTamamlaPage() {
   const [yukleniyor, setYukleniyor] = useState(false);
   const router = useRouter();
 
+  const ilceler = il ? ILCELER(il) : [];
+
   const kaydet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mevki || !seviye || !ilce) {
-      setError('Mevki, seviye ve ilçe zorunludur.');
+    if (!mevki || !seviye || !il || !ilce) {
+      setError('Mevki, seviye, il ve ilce zorunludur.');
       return;
     }
 
@@ -83,7 +77,7 @@ export default function ProfilTamamlaPage() {
           baskin_ayak: baskinAyak || null,
           seviye,
           ilce,
-          il: 'İstanbul',
+          il,
           yas_araligi: yasAraligi || null,
           bio: bio || null,
           profil_tamamlandi: true,
@@ -104,15 +98,15 @@ export default function ProfilTamamlaPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 pb-16 pt-10">
-      <h1 className="mb-1 text-2xl font-extrabold">⚽ Profili Tamamla</h1>
-      <p className="mb-8 text-sm text-gray-400">
+    <div className="mx-auto min-h-screen max-w-md bg-green-950 px-4 pb-16 pt-10">
+      <h1 className="mb-1 text-2xl font-extrabold text-white">⚽ Profili Tamamla</h1>
+      <p className="mb-8 text-sm text-white/40">
         Diğer oyuncular seni tanısın. Yıldız (*) ile işaretli alanlar zorunludur.
       </p>
 
       <form onSubmit={kaydet} className="flex flex-col gap-4">
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-600">Mevki *</label>
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Mevki *</label>
           <select value={mevki} onChange={(e) => setMevki(e.target.value)} className={selectClass}>
             <option value="">Seç</option>
             <option value="Kaleci">Kaleci</option>
@@ -123,7 +117,7 @@ export default function ProfilTamamlaPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-600">Baskın Ayak</label>
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Baskın Ayak</label>
           <select value={baskinAyak} onChange={(e) => setBaskinAyak(e.target.value)} className={selectClass}>
             <option value="">Seç</option>
             <option value="Sağ">Sağ</option>
@@ -133,7 +127,7 @@ export default function ProfilTamamlaPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-600">Seviye *</label>
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Seviye *</label>
           <select value={seviye} onChange={(e) => setSeviye(e.target.value)} className={selectClass}>
             <option value="">Seç</option>
             <option value="Casual">Casual — Eğlence amaçlı</option>
@@ -144,10 +138,22 @@ export default function ProfilTamamlaPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-600">İlçe *</label>
-          <select value={ilce} onChange={(e) => setIlce(e.target.value)} className={selectClass}>
-            <option value="">Seç</option>
-            {ILCELER.map((i) => (
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Il *</label>
+          <select value={il} onChange={(e) => { setIl(e.target.value); setIlce(''); }} className={selectClass}>
+            <option value="">Sec</option>
+            {ILLER.map((sehir) => (
+              <option key={sehir} value={sehir}>
+                {sehir}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Ilce *</label>
+          <select value={ilce} onChange={(e) => setIlce(e.target.value)} disabled={!il} className={selectClass}>
+            <option value="">{il ? 'Sec' : 'Once il sec'}</option>
+            {ilceler.map((i) => (
               <option key={i} value={i}>
                 {i}
               </option>
@@ -156,7 +162,7 @@ export default function ProfilTamamlaPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-600">Yaş Aralığı</label>
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Yaş Aralığı</label>
           <select value={yasAraligi} onChange={(e) => setYasAraligi(e.target.value)} className={selectClass}>
             <option value="">Belirtmek istemiyorum</option>
             <option value="18-25">18 — 25</option>
@@ -166,15 +172,15 @@ export default function ProfilTamamlaPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-600">Hakkında (opsiyonel)</label>
+          <label className="mb-1.5 block text-sm font-semibold text-white/60">Hakkında (opsiyonel)</label>
           <textarea
             placeholder="Kendinden kısaca bahset... (maks. 160 karakter)"
             value={bio}
             onChange={(e) => setBio(e.target.value.slice(0, 160))}
             rows={3}
-            className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
+            className="w-full resize-y rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-green-400 focus:outline-none"
           />
-          <p className="mt-1 text-right text-xs text-gray-300">{bio.length}/160</p>
+          <p className="mt-1 text-right text-xs text-white/20">{bio.length}/160</p>
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -182,7 +188,7 @@ export default function ProfilTamamlaPage() {
         <button
           type="submit"
           disabled={yukleniyor}
-          className="w-full rounded-xl bg-green-600 py-3 text-base font-bold text-white transition hover:bg-green-700 disabled:bg-gray-300"
+          className="w-full rounded-xl bg-green-600 py-3 text-base font-bold text-white transition hover:bg-green-700 disabled:bg-white/10 disabled:text-white/30"
         >
           {yukleniyor ? 'Kaydediliyor...' : 'Profili Tamamla →'}
         </button>

@@ -2,9 +2,91 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Loading animasyonlari */
+@keyframes ball-realistic-bounce {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  35% {
+    transform: translateY(-80px);
+    animation-timing-function: cubic-bezier(0, 0.45, 0.45, 1);
+  }
+  65% {
+    transform: translateY(-4px) scaleX(1.15) scaleY(0.85);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  72% {
+    transform: translateY(-30px) scaleX(1) scaleY(1);
+    animation-timing-function: cubic-bezier(0, 0.45, 0.45, 1);
+  }
+  90% {
+    transform: translateY(-2px) scaleX(1.08) scaleY(0.92);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  95% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes shadow-pulse {
+  0% { transform: scaleX(1); opacity: 0.25; }
+  35% { transform: scaleX(0.5); opacity: 0.08; }
+  65% { transform: scaleX(1.15); opacity: 0.3; }
+  72% { transform: scaleX(0.7); opacity: 0.12; }
+  90% { transform: scaleX(1.05); opacity: 0.25; }
+  100% { transform: scaleX(1); opacity: 0.25; }
+}
+
+@keyframes ball-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+.animate-ball-bounce {
+  animation: ball-realistic-bounce 1.2s infinite;
+}
+
+.animate-ball-shadow {
+  animation: shadow-pulse 1.2s infinite;
+}
+
+.animate-ball-spin {
+  animation: ball-spin 3s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Hero yildiz/partikul efekti */
+@keyframes star-pulse {
+  0%, 100% { opacity: 0.1; transform: scale(0.8); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.animate-star-pulse {
+  animation: star-pulse ease-in-out infinite;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #030712;
+  --foreground: #ffffff;
 }
 
 body {

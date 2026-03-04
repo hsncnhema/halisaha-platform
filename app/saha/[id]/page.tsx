@@ -79,14 +79,14 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
   }, [id]);
 
   if (yukleniyor) {
-    return <div className="mx-auto mt-24 max-w-2xl px-4 text-center text-sm text-gray-400">Yükleniyor...</div>;
+    return <div className="min-h-screen bg-green-950 mx-auto mt-24 max-w-2xl px-4 text-center text-sm text-white/40">Yükleniyor...</div>;
   }
 
   if (!saha) {
     return (
-      <div className="mx-auto mt-24 max-w-2xl px-4 text-center">
-        <p className="mb-3 text-gray-400">Saha bulunamadı.</p>
-        <Link href="/" className="text-sm text-green-600 hover:underline">
+      <div className="min-h-screen bg-green-950 mx-auto mt-24 max-w-2xl px-4 text-center">
+        <p className="mb-3 text-white/40">Saha bulunamadı.</p>
+        <Link href="/" className="text-sm text-green-400 hover:underline">
           Ana sayfaya dön
         </Link>
       </div>
@@ -105,22 +105,22 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
   const bosSlotSayisi = slotlar.filter((s) => (musaitlik[`${seciliGun}_${s}`] || 'bos') === 'bos').length;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-16 pt-6">
-      <Link href="/" className="text-sm text-green-600 hover:underline">
+    <div className="min-h-screen bg-green-950 mx-auto max-w-2xl px-4 pb-16 pt-6">
+      <Link href="/" className="text-sm text-green-400 hover:underline">
         ← Ana Sayfaya Dön
       </Link>
 
-      <div className="mb-3 mt-4 rounded-2xl border border-gray-100 bg-white p-5">
+      <div className="mb-3 mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h1 className="mb-1 text-xl font-extrabold">🏟️ {saha.sahaAdi}</h1>
+            <h1 className="mb-1 text-xl font-extrabold text-white">🏟️ {saha.sahaAdi}</h1>
             {(saha.il || saha.ilce) && (
-              <p className="text-sm text-gray-400">📍 {[saha.il, saha.ilce].filter(Boolean).join(' / ')}</p>
+              <p className="text-sm text-white/40">📍 {[saha.il, saha.ilce].filter(Boolean).join(' / ')}</p>
             )}
           </div>
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-              bosSlotSayisi > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+              bosSlotSayisi > 0 ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'
             }`}
           >
             {bosSlotSayisi > 0 ? `✅ ${bosSlotSayisi} boş slot` : '❌ Dolu'}
@@ -129,27 +129,27 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
 
         <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {saha.format && (
-            <div className="rounded-xl border border-green-200 bg-green-50 p-3">
-              <div className="mb-1 text-xs font-bold text-green-600">FORMAT</div>
-              <div className="text-lg font-extrabold">{saha.format}</div>
+            <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3">
+              <div className="mb-1 text-xs font-bold text-green-400">FORMAT</div>
+              <div className="text-lg font-extrabold text-white">{saha.format}</div>
             </div>
           )}
           {saha.fiyat && (
-            <div className="rounded-xl border border-green-200 bg-green-50 p-3">
-              <div className="mb-1 text-xs font-bold text-green-600">SAATLİK</div>
-              <div className="text-lg font-extrabold">{saha.fiyat} ₺</div>
+            <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3">
+              <div className="mb-1 text-xs font-bold text-green-400">SAATLİK</div>
+              <div className="text-lg font-extrabold text-white">{saha.fiyat} ₺</div>
             </div>
           )}
           {kisiBasiFiyat && (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
-              <div className="mb-1 text-xs font-bold text-blue-600">KİŞİ BAŞI</div>
-              <div className="text-lg font-extrabold">{kisiBasiFiyat} ₺</div>
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3">
+              <div className="mb-1 text-xs font-bold text-blue-400">KİŞİ BAŞI</div>
+              <div className="text-lg font-extrabold text-white">{kisiBasiFiyat} ₺</div>
             </div>
           )}
           {saha.acilisSaati && saha.kapanisSaati && (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <div className="mb-1 text-xs font-bold text-gray-400">ÇALIŞMA</div>
-              <div className="text-sm font-bold">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="mb-1 text-xs font-bold text-white/30">ÇALIŞMA</div>
+              <div className="text-sm font-bold text-white">
                 {saha.acilisSaati} - {saha.kapanisSaati}
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
             </a>
             <a
               href={`tel:${saha.telefon}`}
-              className="block w-full rounded-xl border border-gray-200 py-2.5 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
+              className="block w-full rounded-xl border border-white/10 py-2.5 text-center text-sm font-semibold text-white/60 transition hover:bg-white/5"
             >
               📞 {saha.telefon}
             </a>
@@ -177,8 +177,8 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
 
-      <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-5">
-        <h2 className="mb-4 text-base font-extrabold">📅 Müsaitlik Durumu</h2>
+      <div className="mb-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <h2 className="mb-4 text-base font-extrabold text-white">📅 Müsaitlik Durumu</h2>
 
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
           {gunler.map((gun) => (
@@ -188,7 +188,7 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
               className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
                 seciliGun === gun
                   ? 'border-green-600 bg-green-600 text-white'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'
+                  : 'border-white/10 bg-white/5 text-white/60 hover:border-green-500/30'
               }`}
             >
               {tarihFormat(gun)}
@@ -197,7 +197,7 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {slotlar.length === 0 ? (
-          <p className="text-sm text-gray-400">Müsaitlik bilgisi henüz girilmemiş.</p>
+          <p className="text-sm text-white/40">Müsaitlik bilgisi henüz girilmemiş.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {slotlar.map((slot) => {
@@ -206,12 +206,12 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
                 <div
                   key={slot}
                   className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                    bos ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                    bos ? 'border-green-500/30 bg-green-500/10' : 'border-red-500/30 bg-red-500/10'
                   }`}
                 >
-                  <span className="text-sm font-bold">{slot}</span>
+                  <span className="text-sm font-bold text-white">{slot}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold ${bos ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className={`text-xs font-bold ${bos ? 'text-green-400' : 'text-red-400'}`}>
                       {bos ? '✅ Boş' : '❌ Dolu'}
                     </span>
                     {bos && saha.telefon && (
@@ -234,9 +234,9 @@ export default function SahaProfilPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {saha.kurallar && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h2 className="mb-3 text-base font-extrabold">📋 Saha Kuralları</h2>
-          <p className="text-sm leading-relaxed text-gray-500">{saha.kurallar}</p>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <h2 className="mb-3 text-base font-extrabold text-white">📋 Saha Kuralları</h2>
+          <p className="text-sm leading-relaxed text-white/40">{saha.kurallar}</p>
         </div>
       )}
     </div>

@@ -309,15 +309,24 @@ npm run lint     # ESLint kontrolü
 - [x] Saha kayıt akışı Supabase'e taşındı (`beklemede → aktif | reddedildi`)
 - [x] Google OAuth yönlendirme sorunu düzeltildi
 
-## Eksik / Planlanan Özellikler
+## TODO - Öncelik Sırası
 
-- [ ] Saha kayıt formunda ilçe dropdown'dan lat/lng otomatik atanması
-- [ ] Turnuva sayfaları (DB tabloları hazır, UI yok)
-- [ ] Google Geocoding (şu an ilçe merkezi kullanılıyor)
-- [ ] Ödeme sistemi (İyzico/Stripe)
-- [ ] Check-in sistemi
-- [ ] Bekleme listesi bildirimleri
-- [ ] Takım profili & kaptan sistemi
-- [ ] İlan sabitleme (ücretli özellik)
-- [ ] Mobil uygulama (React Native)
-- [ ] `.env.local`'den eski Firebase değişkenlerinin temizlenmesi
+### Kritik
+- [ ] Profil oluşturma akışını tamamla
+- [ ] Takım oluşturma sistemi
+- [ ] Arkadaş ekleme / takipçi sistemi
+- [ ] Arkadaşları takıma davet etme
+- [ ] Mesajlaşma sistemi
+
+### Önemli
+- [ ] Türkiye geneli tüm iller/ilçeler eklenmeli
+- [ ] Site içeriği Türkiye geneline göre düzenlenmeli
+- [ ] Saha kayıt formuna ilçe bazlı koordinat atama
+- [ ] Halısaha panel detaylandırma
+- [ ] Admin paneli genişletme
+
+### Tasarım
+- [ ] Ana sayfa UI/UX yenileme
+- [ ] Renk kombinasyonu ve görsel deneyim
+- [ ] Marka kimliği ve isim kararı
+- [ ] Mobil responsive iyileştirme

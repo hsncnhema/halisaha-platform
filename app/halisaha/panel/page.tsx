@@ -62,9 +62,9 @@ const tarihFormat = (tarih: string) => {
 };
 
 const selectClass =
-  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none';
+  'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
 const inputClass =
-  'w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none';
+  'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
 
 type SahaState = {
   id: string;
@@ -237,7 +237,7 @@ export default function HalisahaPanelPage() {
   };
 
   if (yukleniyor || !saha) {
-    return <div className="mx-auto mt-24 max-w-2xl px-4 text-center text-sm text-gray-400">Yükleniyor...</div>;
+    return <div className="mx-auto mt-24 max-w-2xl px-4 text-center text-sm text-white/40">Yükleniyor...</div>;
   }
 
   if (!saha.kurulumTamamlandi) {
@@ -248,15 +248,15 @@ export default function HalisahaPanelPage() {
     );
 
     return (
-      <div className="mx-auto max-w-md px-4 pb-16 pt-10">
-        <h1 className="mb-2 text-2xl font-extrabold">🏟️ Saha Kurulumu</h1>
-        <p className="mb-8 text-sm leading-relaxed text-gray-400">
+      <div className="mx-auto min-h-screen max-w-md bg-green-950 px-4 pb-16 pt-10">
+        <h1 className="mb-2 text-2xl font-extrabold text-white">🏟️ Saha Kurulumu</h1>
+        <p className="mb-8 text-sm leading-relaxed text-white/40">
           Müsaitlik takvimini oluşturmak için çalışma saatlerini ve slot süresini belirle. Daha sonra değiştirebilirsin.
         </p>
 
         <form onSubmit={kurulumKaydet} className="flex flex-col gap-4">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-400">Açılış Saati</label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-white/30">Açılış Saati</label>
             <select
               value={kurulumForm.acilisSaati}
               onChange={(e) => setKurulumForm({ ...kurulumForm, acilisSaati: e.target.value })}
@@ -269,7 +269,7 @@ export default function HalisahaPanelPage() {
               ))}
             </select>
 
-            <label className="mb-2 mt-4 block text-xs font-bold uppercase tracking-wide text-gray-400">Kapanış Saati</label>
+            <label className="mb-2 mt-4 block text-xs font-bold uppercase tracking-wide text-white/30">Kapanış Saati</label>
             <select
               value={kurulumForm.kapanisSaati}
               onChange={(e) => setKurulumForm({ ...kurulumForm, kapanisSaati: e.target.value })}
@@ -282,7 +282,7 @@ export default function HalisahaPanelPage() {
               ))}
             </select>
 
-            <label className="mb-2 mt-4 block text-xs font-bold uppercase tracking-wide text-gray-400">Slot Süresi</label>
+            <label className="mb-2 mt-4 block text-xs font-bold uppercase tracking-wide text-white/30">Slot Süresi</label>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: '60 dakika', value: '60', ornek: '19:00-20:00' },
@@ -294,35 +294,35 @@ export default function HalisahaPanelPage() {
                   onClick={() => setKurulumForm({ ...kurulumForm, slotSuresi: opt.value })}
                   className={`rounded-xl border-2 p-3 text-center transition ${
                     kurulumForm.slotSuresi === opt.value
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200 bg-white hover:border-green-300'
+                      ? 'border-green-500 bg-green-500/10'
+                      : 'border-white/10 bg-white/5 hover:border-green-500/30'
                   }`}
                 >
-                  <div className={`text-sm font-bold ${kurulumForm.slotSuresi === opt.value ? 'text-green-600' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-bold ${kurulumForm.slotSuresi === opt.value ? 'text-green-400' : 'text-white'}`}>
                     {opt.label}
                   </div>
-                  <div className="mt-0.5 text-xs text-gray-400">örn: {opt.ornek}</div>
+                  <div className="mt-0.5 text-xs text-white/30">örn: {opt.ornek}</div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-            <p className="mb-2 text-xs font-bold text-green-600">ÖNİZLEME — İlk 4 Slot</p>
+          <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+            <p className="mb-2 text-xs font-bold text-green-400">ÖNİZLEME — İlk 4 Slot</p>
             <div className="flex flex-wrap gap-2">
               {onizlemeSlotlar.slice(0, 4).map((slot) => (
-                <span key={slot} className="rounded-lg border border-green-200 bg-white px-2.5 py-1 text-xs font-semibold text-green-700">
+                <span key={slot} className="rounded-lg border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-xs font-semibold text-green-300">
                   {slot}
                 </span>
               ))}
-              <span className="self-center text-xs text-gray-400">... toplam {onizlemeSlotlar.length} slot</span>
+              <span className="self-center text-xs text-white/30">... toplam {onizlemeSlotlar.length} slot</span>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={kurulumKaydediliyor}
-            className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-gray-300"
+            className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-white/10 disabled:text-white/30"
           >
             {kurulumKaydediliyor ? 'Kaydediliyor...' : 'Kurulumu Tamamla →'}
           </button>
@@ -337,10 +337,10 @@ export default function HalisahaPanelPage() {
   const bugunBos = slotlar.length - bugunDolu;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-16 pt-6">
+    <div className="mx-auto min-h-screen max-w-2xl bg-green-950 px-4 pb-16 pt-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="mb-0.5 text-xl font-extrabold">🏟️ {saha.sahaAdi}</h1>
+          <h1 className="mb-0.5 text-xl font-extrabold text-white">🏟️ {saha.sahaAdi}</h1>
           <p
             className={`text-xs font-bold ${
               saha.durum === 'aktif'
@@ -359,28 +359,28 @@ export default function HalisahaPanelPage() {
         </div>
         <button
           onClick={cikisYap}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500 transition hover:bg-gray-50"
+          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/60 transition hover:bg-white/10"
         >
           Çıkış
         </button>
       </div>
 
       <div className="mb-6 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-center">
-          <div className="text-2xl font-extrabold text-green-600">{bugunBos}</div>
-          <div className="mt-1 text-xs text-gray-400">Bugün Boş</div>
+        <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-4 text-center">
+          <div className="text-2xl font-extrabold text-green-400">{bugunBos}</div>
+          <div className="mt-1 text-xs text-white/30">Bugün Boş</div>
         </div>
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center">
-          <div className="text-2xl font-extrabold text-red-500">{bugunDolu}</div>
-          <div className="mt-1 text-xs text-gray-400">Bugün Dolu</div>
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-center">
+          <div className="text-2xl font-extrabold text-red-400">{bugunDolu}</div>
+          <div className="mt-1 text-xs text-white/30">Bugün Dolu</div>
         </div>
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
-          <div className="text-2xl font-extrabold text-blue-600">{saha.format || '—'}</div>
-          <div className="mt-1 text-xs text-gray-400">Format</div>
+        <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4 text-center">
+          <div className="text-2xl font-extrabold text-blue-400">{saha.format || '—'}</div>
+          <div className="mt-1 text-xs text-white/30">Format</div>
         </div>
       </div>
 
-      <div className="mb-6 flex gap-1 rounded-xl bg-green-50 p-1">
+      <div className="mb-6 flex gap-1 rounded-xl bg-white/5 p-1">
         {[
           { id: 'takvim', label: '📅 Takvim' },
           { id: 'profil', label: '⚙️ Profil' },
@@ -389,7 +389,7 @@ export default function HalisahaPanelPage() {
             key={sekme.id}
             onClick={() => setAktifSekme(sekme.id)}
             className={`flex-1 rounded-lg py-2.5 text-sm font-bold transition ${
-              aktifSekme === sekme.id ? 'bg-white text-green-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              aktifSekme === sekme.id ? 'bg-white/10 text-green-400' : 'text-white/40 hover:text-white/60'
             }`}
           >
             {sekme.label}
@@ -407,7 +407,7 @@ export default function HalisahaPanelPage() {
                 className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
                   seciliGun === gun
                     ? 'border-green-600 bg-green-600 text-white'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'
+                    : 'border-white/10 bg-white/5 text-white/60 hover:border-green-500/30'
                 }`}
               >
                 {tarihFormat(gun)}
@@ -423,12 +423,12 @@ export default function HalisahaPanelPage() {
                   key={slot}
                   onClick={() => slotToggle(slot)}
                   className={`w-full rounded-xl border-2 px-4 py-3.5 transition ${
-                    bos ? 'border-green-200 bg-green-50 hover:border-green-400' : 'border-red-200 bg-red-50 hover:border-red-400'
+                    bos ? 'border-green-500/30 bg-green-500/10 hover:border-green-500/50' : 'border-red-500/30 bg-red-500/10 hover:border-red-500/50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold">{slot}</span>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${bos ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                    <span className="text-sm font-bold text-white">{slot}</span>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${bos ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'}`}>
                       {bos ? '✅ Boş' : '❌ Dolu'}
                     </span>
                   </div>
@@ -436,21 +436,21 @@ export default function HalisahaPanelPage() {
               );
             })}
           </div>
-          <p className="mt-4 text-center text-xs text-gray-300">Slota tıklayarak boş / dolu olarak işaretle</p>
+          <p className="mt-4 text-center text-xs text-white/20">Slota tıklayarak boş / dolu olarak işaretle</p>
         </div>
       )}
 
       {aktifSekme === 'profil' && (
         <div>
           {basari && (
-            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+            <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-400">
               ✅ {basari}
             </div>
           )}
           <form onSubmit={profilKaydet} className="flex flex-col gap-3">
-            <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5">
+            <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5">
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400">Saha Adı</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/30">Saha Adı</label>
                 <input
                   type="text"
                   value={profilForm.sahaAdi || ''}
@@ -459,7 +459,7 @@ export default function HalisahaPanelPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400">WhatsApp / Telefon</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/30">WhatsApp / Telefon</label>
                 <input
                   type="tel"
                   value={profilForm.telefon || ''}
@@ -468,7 +468,7 @@ export default function HalisahaPanelPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400">İlçe</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/30">İlçe</label>
                 <select
                   value={profilForm.ilce || ''}
                   onChange={(e) => setProfilForm({ ...profilForm, ilce: e.target.value })}
@@ -483,7 +483,7 @@ export default function HalisahaPanelPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400">Format</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/30">Format</label>
                 <select
                   value={profilForm.format || ''}
                   onChange={(e) => setProfilForm({ ...profilForm, format: e.target.value })}
@@ -497,7 +497,7 @@ export default function HalisahaPanelPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400">Saatlik Fiyat (₺)</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/30">Saatlik Fiyat (₺)</label>
                 <input
                   type="number"
                   value={profilForm.fiyat || ''}
@@ -511,20 +511,20 @@ export default function HalisahaPanelPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400">Kurallar / Notlar</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/30">Kurallar / Notlar</label>
                 <textarea
                   placeholder="Sahaya özel bilgilendirme..."
                   value={profilForm.kurallar || ''}
                   onChange={(e) => setProfilForm({ ...profilForm, kurallar: e.target.value })}
                   rows={3}
-                  className="w-full resize-y rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-green-400 focus:outline-none"
+                  className="w-full resize-y rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none"
                 />
               </div>
             </div>
             <button
               type="submit"
               disabled={kaydediliyor}
-              className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-gray-300"
+              className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700 disabled:bg-white/10 disabled:text-white/30"
             >
               {kaydediliyor ? 'Kaydediliyor...' : 'Profili Kaydet'}
             </button>
