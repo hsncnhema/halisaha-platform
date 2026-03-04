@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { ILCELER, ILLER } from '@/lib/turkiye';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const selectClass =
   'w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-white focus:border-green-400 focus:outline-none';
@@ -43,6 +44,9 @@ export default function ProfilPage() {
   const [yukleniyor, setYukleniyor] = useState(true);
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [basari, setBasari] = useState(false);
+  const [ilanlar, setIlanlar] = useState<any[]>([]);
+  const [arkadasSayisi, setArkadasSayisi] = useState(0);
+  const [aktifSekme, setAktifSekme] = useState<'profil_duzenle' | 'ilanlarim' | 'arkadaslar'>('ilanlarim');
   const router = useRouter();
   const ilceler = form.il ? ILCELER(form.il) : [];
 
@@ -81,6 +85,25 @@ export default function ProfilPage() {
 
       setKullanici(data);
       setForm(data);
+
+      // İlanları çek
+      const { data: ilanData } = await supabase
+        .from('ilanlar')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      setIlanlar(ilanData || []);
+
+      // Arkadaşlar (Kabul edilmiş) sayısını bul
+      const { data: arkadaslarData } = await supabase
+        .from('arkadaslik')
+        .select('*')
+        .eq('durum', 'kabul_edildi')
+        .or(`gonderen_id.eq.${user.id},alan_id.eq.${user.id}`);
+
+      setArkadasSayisi(arkadaslarData?.length || 0);
+
       setYukleniyor(false);
     };
 
@@ -141,33 +164,72 @@ export default function ProfilPage() {
         </button>
       </div>
 
-      <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-600/20 text-3xl">⚽</div>
-        <h2 className="mb-1 text-xl font-extrabold text-white">{kullanici.ad || 'İsimsiz Oyuncu'}</h2>
-        <p className="mb-3 text-sm text-white/40">{kullanici.email}</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {kullanici.mevki && <span className="rounded-full bg-green-900/60 px-2.5 py-0.5 text-xs font-bold text-green-300">{kullanici.mevki}</span>}
-          {kullanici.seviye && <span className="rounded-full bg-blue-900/60 px-2.5 py-0.5 text-xs font-bold text-blue-300">{kullanici.seviye}</span>}
-          {kullanici.ilce && <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/50">📍 {kullanici.ilce}</span>}
+      <div className="mb-4 rounded-3xl border border-white/10 bg-white/5 p-6 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10 w-full">
+          <div className="flex shrink-0 h-24 w-24 items-center justify-center rounded-full bg-green-600 text-3xl font-black text-white shadow-lg shadow-black/30">
+            {kullanici.ad ? kullanici.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
+          </div>
+          <div className="flex-1 text-center sm:text-left min-w-0">
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 mb-2 w-full">
+              <h2 className="text-2xl font-extrabold text-white truncate w-full">{kullanici.ad || 'İsimsiz Oyuncu'}</h2>
+              <button
+                onClick={() => {
+                  setAktifSekme('profil_duzenle');
+                  setDuzenle(true);
+                }}
+                className="shrink-0 rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-400 transition hover:bg-green-500/20"
+              >
+                ✏️ Düzenle
+              </button>
+            </div>
+
+            <p className="mb-3 text-sm text-white/40">{kullanici.email}</p>
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+              {kullanici.mevki && <span className="rounded-full bg-green-900/60 px-3 py-1 text-xs font-bold text-green-300">{kullanici.mevki}</span>}
+              {kullanici.seviye && <span className="rounded-full bg-blue-900/60 px-3 py-1 text-xs font-bold text-blue-300">{kullanici.seviye}</span>}
+              {kullanici.ilce && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/50">📍 {kullanici.ilce}, {kullanici.il}</span>}
+            </div>
+          </div>
         </div>
-        {kullanici.bio && <p className="mt-3 text-sm leading-relaxed text-white/40">{kullanici.bio}</p>}
+        <div className="relative z-10 w-full mt-4">
+          {kullanici.bio && <p className="text-sm leading-relaxed text-white/60 text-center sm:text-left">{kullanici.bio}</p>}
+        </div>
       </div>
 
-      {basari && (
-        <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-400">
-          ✅ Profil güncellendi!
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+          <p className="text-2xl font-black text-white">{ilanlar.length}</p>
+          <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mt-1">Açılan İlanlar</p>
         </div>
-      )}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+          <p className="text-2xl font-black text-white">{arkadasSayisi}</p>
+          <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mt-1">Arkadaşlar</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center opacity-60">
+          <p className="text-2xl font-black text-white">0</p>
+          <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mt-1">Maçlar<br /><span className="text-[10px] text-green-400">(Yakında)</span></p>
+        </div>
+      </div>
 
-      <div className="mb-4 flex justify-end">
-        {!duzenle && (
-          <button
-            onClick={() => setDuzenle(true)}
-            className="rounded-lg border border-green-500 bg-white/5 px-4 py-2 text-sm font-semibold text-green-400 transition hover:bg-white/10"
-          >
-            ✏️ Düzenle
-          </button>
-        )}
+      <div className="mb-6 flex gap-2 border-b border-white/10 overflow-x-auto pb-1">
+        <button
+          onClick={() => { setAktifSekme('ilanlarim'); setDuzenle(false); }}
+          className={`pb-3 px-4 text-sm font-bold whitespace-nowrap ${aktifSekme === 'ilanlarim' ? 'border-b-2 border-green-500 text-green-400' : 'text-white/50 hover:text-white/80'}`}
+        >
+          İlanlarım
+        </button>
+        <button
+          onClick={() => { setAktifSekme('arkadaslar'); setDuzenle(false); }}
+          className={`pb-3 px-4 text-sm font-bold whitespace-nowrap ${aktifSekme === 'arkadaslar' ? 'border-b-2 border-green-500 text-green-400' : 'text-white/50 hover:text-white/80'}`}
+        >
+          Arkadaşlar
+        </button>
+        <button
+          onClick={() => { setAktifSekme('profil_duzenle'); setDuzenle(false); }}
+          className={`pb-3 px-4 text-sm font-bold whitespace-nowrap ${aktifSekme === 'profil_duzenle' ? 'border-b-2 border-green-500 text-green-400' : 'text-white/50 hover:text-white/80'}`}
+        >
+          Hakkında
+        </button>
       </div>
 
       {duzenle ? (
@@ -271,7 +333,7 @@ export default function ProfilPage() {
             </button>
           </div>
         </div>
-      ) : (
+      ) : aktifSekme === 'profil_duzenle' ? (
         <div className="flex flex-col gap-3">
           {[
             { label: 'Baskın Ayak', value: kullanici.baskinAyak },
@@ -286,7 +348,41 @@ export default function ProfilPage() {
               </div>
             ))}
         </div>
-      )}
+      ) : aktifSekme === 'ilanlarim' ? (
+        <div className="flex flex-col gap-3">
+          {ilanlar.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-white/50">
+              Henüz ilan açmadınız.
+              <div className="mt-4">
+                <Link href="/ilanlar" className="text-green-400 font-bold hover:underline">İlan Aç →</Link>
+              </div>
+            </div>
+          ) : (
+            ilanlar.map((ilan: any) => (
+              <Link
+                key={ilan.id}
+                href={`/ilanlar/${ilan.id}`}
+                className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-green-500/40 hover:bg-white/10"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-white/60">
+                    {ilan.kategori}
+                  </span>
+                  <span className="text-xs text-white/30">
+                    {new Date(ilan.created_at).toLocaleDateString('tr-TR')}
+                  </span>
+                </div>
+                <h3 className="font-bold text-white text-sm mb-1">{ilan.baslik}</h3>
+                <p className="text-xs text-white/50 line-clamp-2">{ilan.aciklama}</p>
+              </Link>
+            ))
+          )}
+        </div>
+      ) : aktifSekme === 'arkadaslar' ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-white/50">
+          Yoklamak için Yakında!
+        </div>
+      ) : null}
     </div>
   );
 }

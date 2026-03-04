@@ -5,6 +5,7 @@ import { ILCELER, ILLER } from '@/lib/turkiye';
 import type { User } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const kategoriRenk: Record<string, string> = {
   'Oyuncu Arıyorum': 'bg-green-900/60 text-green-300',
@@ -162,9 +163,8 @@ export default function IlanlarPage() {
         </div>
         <button
           onClick={handleIlanAc}
-          className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-            formAcik ? 'bg-white/10 text-white/60 hover:bg-white/20' : 'bg-green-600 text-white hover:bg-green-700'
-          }`}
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition ${formAcik ? 'bg-white/10 text-white/60 hover:bg-white/20' : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
         >
           {formAcik ? 'İptal' : '+ İlan Aç'}
         </button>
@@ -291,7 +291,11 @@ export default function IlanlarPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {filtrelenmis.map((ilan) => (
-            <div key={ilan.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-green-500/40">
+            <Link
+              key={ilan.id}
+              href={`/ilanlar/${ilan.id}`}
+              className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-green-500/40 hover:bg-white/10"
+            >
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${kategoriRenk[ilan.kategori] || 'bg-slate-100 text-slate-600'}`}>
@@ -310,7 +314,7 @@ export default function IlanlarPage() {
                   🗓 {ilan.tarih} {ilan.saat}
                 </p>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}

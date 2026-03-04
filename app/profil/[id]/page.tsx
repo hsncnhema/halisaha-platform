@@ -22,7 +22,7 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
     const { id } = use(params);
     const [profil, setProfil] = useState<ProfilData | null>(null);
     const [arkadaslikDurumu, setArkadaslikDurumu] = useState<'yok' | 'istek_gonderildi' | 'arkadas'>('yok');
-    // const [mevcutKullaniciId, setMevcutKullaniciId] = useState<string | null>(null);
+    const [mevcutKullaniciId, setMevcutKullaniciId] = useState<string | null>(null);
     const [yukleniyor, setYukleniyor] = useState(true);
 
     useEffect(() => {
@@ -30,7 +30,7 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 const basvuranId = user?.id;
-                // setMevcutKullaniciId(basvuranId || null);
+                setMevcutKullaniciId(basvuranId || null);
 
                 // Profil Bilgilerini Çek
                 const { data: profilData, error: profilHata } = await supabase
@@ -145,20 +145,24 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="mt-6">
-                            {arkadaslikDurumu === 'arkadas' && (
-                                <button disabled className="rounded-xl border border-white/20 bg-white/10 px-6 py-2 text-sm font-bold text-white/70 cursor-not-allowed">
-                                    ✓ Arkadaşsınız
-                                </button>
-                            )}
-                            {arkadaslikDurumu === 'istek_gonderildi' && (
-                                <button disabled className="rounded-xl border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 text-sm font-bold text-yellow-500 cursor-not-allowed">
-                                    Kabul Bekleniyor
-                                </button>
-                            )}
-                            {arkadaslikDurumu === 'yok' && (
-                                <button onClick={arkadasEkle} className="rounded-xl bg-green-600 px-6 py-2 text-sm font-bold text-white transition hover:bg-green-500">
-                                    Arkadaş Ekle
-                                </button>
+                            {mevcutKullaniciId !== id && (
+                                <>
+                                    {arkadaslikDurumu === 'arkadas' && (
+                                        <button disabled className="rounded-xl border border-white/20 bg-white/10 px-6 py-2 text-sm font-bold text-white/70 cursor-not-allowed">
+                                            ✓ Arkadaşsınız
+                                        </button>
+                                    )}
+                                    {arkadaslikDurumu === 'istek_gonderildi' && (
+                                        <button disabled className="rounded-xl border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 text-sm font-bold text-yellow-500 cursor-not-allowed">
+                                            Kabul Bekleniyor
+                                        </button>
+                                    )}
+                                    {arkadaslikDurumu === 'yok' && (
+                                        <button onClick={arkadasEkle} className="rounded-xl bg-green-600 px-6 py-2 text-sm font-bold text-white transition hover:bg-green-500">
+                                            Arkadaş Ekle
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

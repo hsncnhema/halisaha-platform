@@ -1,11 +1,17 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import AppNavbar from '@/components/AppNavbar';
 import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { User, MessageCircle } from 'lucide-react';
+import { User, MessageCircle, Search } from 'lucide-react';
+
+type AramaSonucu = {
+  id: string;
+  ad: string | null;
+  email: string | null;
+};
 
 export default function LayoutShell({
   children,
@@ -14,6 +20,11 @@ export default function LayoutShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [kullanici, setKullanici] = useState<{ id: string; ad: string } | null>(null);
+  const [aramaAcik, setAramaAcik] = useState(false);
+  const [aramaMetni, setAramaMetni] = useState('');
+  const [aramaSonuclari, setAramaSonuclari] = useState<AramaSonucu[]>([]);
+  const [aramaYukleniyor, setAramaYukleniyor] = useState(false);
+  const aramaAlaniRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const kontrol = async () => {
@@ -39,6 +50,56 @@ export default function LayoutShell({
     };
   }, []);
 
+  useEffect(() => {
+    if (!aramaAcik) return;
+
+    const disariTiklama = (event: MouseEvent) => {
+      if (aramaAlaniRef.current && !aramaAlaniRef.current.contains(event.target as Node)) {
+        setAramaAcik(false);
+      }
+    };
+
+    document.addEventListener('mousedown', disariTiklama);
+    return () => {
+      document.removeEventListener('mousedown', disariTiklama);
+    };
+  }, [aramaAcik]);
+
+  useEffect(() => {
+    if (!kullanici || !aramaAcik) {
+      setAramaSonuclari([]);
+      setAramaYukleniyor(false);
+      return;
+    }
+
+    const metin = aramaMetni.trim();
+    if (metin.length < 2) {
+      setAramaSonuclari([]);
+      setAramaYukleniyor(false);
+      return;
+    }
+
+    let aktif = true;
+    setAramaYukleniyor(true);
+
+    const zamanlayici = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, ad, email')
+        .or(`ad.ilike.%${metin}%,email.ilike.%${metin}%`)
+        .limit(5);
+
+      if (!aktif) return;
+      setAramaSonuclari(error || !data ? [] : (data as AramaSonucu[]));
+      setAramaYukleniyor(false);
+    }, 250);
+
+    return () => {
+      aktif = false;
+      clearTimeout(zamanlayici);
+    };
+  }, [aramaAcik, aramaMetni, kullanici]);
+
   const basHarf = kullanici?.ad?.trim()
     ? kullanici.ad.trim().charAt(0).toLocaleUpperCase('tr-TR')
     : '';
@@ -48,9 +109,17 @@ export default function LayoutShell({
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* MASAÜSTÜ İÇİN SABİT PROFİL VE İNBOX İKONLARI */}
-      <div className="hidden md:flex fixed top-4 right-4 z-50 items-center gap-3">
+      <div ref={aramaAlaniRef} className="hidden md:flex fixed top-4 right-4 z-50 items-center gap-3">
         {kullanici ? (
           <>
+            <button
+              type="button"
+              onClick={() => setAramaAcik((prev) => !prev)}
+              aria-label="Ara"
+              className="inline-flex items-center justify-center"
+            >
+              <Search className="w-5 h-5 text-white/70 hover:text-white transition" />
+            </button>
             <Link
               href="/mesajlar"
               className="inline-flex items-center justify-center"
@@ -64,6 +133,46 @@ export default function LayoutShell({
             >
               {basHarf || <User className="w-4 h-4 text-white" />}
             </Link>
+
+            <div
+              className={`fixed top-14 right-4 z-50 w-72 transition-all duration-300 ${aramaAcik ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+            >
+              <div className="rounded-2xl border border-white/20 bg-green-950/95 backdrop-blur-md p-3 shadow-xl">
+                <input
+                  value={aramaMetni}
+                  onChange={(event) => setAramaMetni(event.target.value)}
+                  placeholder="Oyuncu ara..."
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30"
+                />
+
+                {aramaMetni.trim().length >= 2 && (
+                  <div className="mt-2 space-y-1">
+                    {aramaYukleniyor && (
+                      <p className="px-2 py-1 text-xs text-white/60">Araniyor...</p>
+                    )}
+
+                    {!aramaYukleniyor && aramaSonuclari.length === 0 && (
+                      <p className="px-2 py-1 text-xs text-white/60">Sonuc bulunamadi.</p>
+                    )}
+
+                    {!aramaYukleniyor && aramaSonuclari.map((sonuc) => (
+                      <Link
+                        key={sonuc.id}
+                        href={`/profil/${sonuc.id}`}
+                        onClick={() => {
+                          setAramaAcik(false);
+                          setAramaMetni('');
+                        }}
+                        className="block rounded-lg px-2 py-2 transition hover:bg-white/10"
+                      >
+                        <p className="text-sm font-semibold text-white">{sonuc.ad || 'Isimsiz Kullanici'}</p>
+                        <p className="text-xs text-white/60">{sonuc.email || '-'}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         ) : (
           <Link
@@ -82,4 +191,3 @@ export default function LayoutShell({
     </div>
   );
 }
-

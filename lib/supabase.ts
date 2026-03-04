@@ -322,6 +322,73 @@ export async function arkadasMi(user_id: string, diger_id: string) {
   return data;
 }
 
+export async function mesajGonder(alici_id: string, icerik: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Giriş yapılmamış');
+
+  const { data, error } = await supabase
+    .from('mesajlar')
+    .insert({ gonderen_id: user.id, alici_id, icerik })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function mesajlariGetir(diger_id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Giriş yapılmamış');
+
+  const { data, error } = await supabase
+    .from('mesajlar')
+    .select('*')
+    .or(
+      `and(gonderen_id.eq.${user.id},alici_id.eq.${diger_id}),and(gonderen_id.eq.${diger_id},alici_id.eq.${user.id})`
+    )
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function sohbetleriGetir(user_id: string) {
+  const { data, error } = await supabase
+    .from('mesajlar')
+    .select(`
+      id, icerik, okundu, created_at, gonderen_id, alici_id,
+      gonderen:profiles!gonderen_id(id, ad, avatar_url),
+      alici:profiles!alici_id(id, ad, avatar_url)
+    `)
+    .or(`gonderen_id.eq.${user_id},alici_id.eq.${user_id}`)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Her konuşma partneri için yalnızca son mesajı tut
+  const sohbetMap = new Map<string, typeof data[0]>();
+  for (const mesaj of data ?? []) {
+    const partner_id = mesaj.gonderen_id === user_id ? mesaj.alici_id : mesaj.gonderen_id;
+    if (!sohbetMap.has(partner_id)) {
+      sohbetMap.set(partner_id, mesaj);
+    }
+  }
+
+  return Array.from(sohbetMap.values());
+}
+
+export async function mesajOkunduIsaretle(mesaj_id: string) {
+  const { data, error } = await supabase
+    .from('mesajlar')
+    .update({ okundu: true })
+    .eq('id', mesaj_id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function createServerSupabaseClient() {
   const [{ createServerClient }, { cookies }] = await Promise.all([
     import('@supabase/auth-helpers-nextjs'),

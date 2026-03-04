@@ -108,14 +108,14 @@ export default function IlanDetayPage({ params }: { params: Promise<{ id: string
                 'Anonim'
               )}
             </p>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Sahagram'da "${ilan.baslik}" ilanınızı gördüm, iletişime geçmek istedim.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-500"
-            >
-              WhatsApp ile İletişim
-            </a>
+            {ilan.user_id && (
+              <Link
+                href={`/profil/${ilan.user_id}`}
+                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-500"
+              >
+                Profili Görüntüle
+              </Link>
+            )}
           </div>
         </div>
       </div>
