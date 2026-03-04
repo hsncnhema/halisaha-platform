@@ -45,6 +45,7 @@ export default function MesajlarPage() {
     const [yukleniyor, setYukleniyor] = useState(true);
     const [mobilListeAcik, setMobilListeAcik] = useState(true);
     const [istekler, setIstekler] = useState<Istek[]>([]);
+    const [aktifSekme, setAktifSekme] = useState<'mesajlar' | 'istekler'>('mesajlar');
     const mesajlarEndRef = useRef<HTMLDivElement>(null);
 
     // Oturum ve Sohbet Listesi Getirme
@@ -285,72 +286,102 @@ export default function MesajlarPage() {
         <div className="flex h-screen bg-green-950 font-sans">
             {/* SOL KOLON - SOHBET LİSTESİ */}
             <div className={`w-full md:w-80 flex flex-col border-r border-white/10 ${mobilListeAcik ? 'flex' : 'hidden md:flex'}`}>
-                <div className="p-4 border-b border-white/10 shrink-0">
-                    <h1 className="text-xl font-black text-white">Mesajlar</h1>
+                {/* Sol Kolon Header (Sekmeler) */}
+                <div className="shrink-0 border-b border-white/10">
+                    <div className="flex bg-white/5">
+                        <button
+                            onClick={() => setAktifSekme('mesajlar')}
+                            className={`flex-1 py-4 text-sm text-center transition tracking-wide ${aktifSekme === 'mesajlar'
+                                    ? 'border-b-2 border-green-400 text-white font-bold'
+                                    : 'text-white/40 hover:text-white'
+                                }`}
+                        >
+                            Mesajlar
+                        </button>
+                        <button
+                            onClick={() => setAktifSekme('istekler')}
+                            className={`flex-1 py-4 text-sm text-center flex items-center justify-center gap-2 transition tracking-wide ${aktifSekme === 'istekler'
+                                    ? 'border-b-2 border-green-400 text-white font-bold'
+                                    : 'text-white/40 hover:text-white'
+                                }`}
+                        >
+                            İstekler
+                            {istekler.length > 0 && (
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                    {istekler.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    {istekler.length > 0 && (
-                        <div className="border-b border-white/10 pb-2">
-                            <h2 className="px-4 py-2 text-xs font-bold text-white/40 uppercase tracking-wider">
-                                Arkadaşlık İstekleri
-                            </h2>
-                            {istekler.map((istek) => (
-                                <div key={istek.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/5 transition">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white">
-                                            {istek.profiles?.ad ? istek.profiles.ad.charAt(0).toUpperCase() : '?'}
+                    {aktifSekme === 'istekler' ? (
+                        <>
+                            {istekler.length > 0 ? (
+                                <div className="pb-2">
+                                    {istekler.map((istek) => (
+                                        <div key={istek.id} className="flex items-center justify-between px-4 py-3 border-b border-white/5 hover:bg-white/5 transition">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white">
+                                                    {istek.profiles?.ad ? istek.profiles.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
+                                                </div>
+                                                <div className="truncate">
+                                                    <p className="text-sm font-bold text-white truncate">{istek.profiles?.ad}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => kabulEt(istek.id)}
+                                                    className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white hover:bg-green-500 transition"
+                                                    title="Kabul Et"
+                                                >
+                                                    ✓
+                                                </button>
+                                                <button
+                                                    onClick={() => reddEt(istek.id)}
+                                                    className="h-8 w-8 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center hover:bg-red-600/50 transition"
+                                                    title="Reddet"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="truncate">
-                                            <p className="text-sm font-bold text-white truncate">{istek.profiles?.ad}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <button
-                                            onClick={() => kabulEt(istek.id)}
-                                            className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white hover:bg-green-500 transition"
-                                            title="Kabul Et"
-                                        >
-                                            ✓
-                                        </button>
-                                        <button
-                                            onClick={() => reddEt(istek.id)}
-                                            className="h-8 w-8 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center hover:bg-red-600/50 transition"
-                                            title="Reddet"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {sohbetler.length === 0 ? (
-                        <p className="p-6 text-center text-sm text-white/40">Henüz bir mesajınız yok.</p>
+                            ) : (
+                                <p className="p-6 text-center text-sm text-white/40">Bekleyen arkadaşlık isteğiniz bulunmuyor.</p>
+                            )}
+                        </>
                     ) : (
-                        sohbetler.map(partner => (
-                            <button
-                                key={partner.id}
-                                onClick={() => {
-                                    setSeciliPartner(partner);
-                                    setMobilListeAcik(false); // Mobilde listeyi gizle, sohbeti aç
-                                }}
-                                className={`w-full flex items-center gap-3 p-4 border-b border-white/5 transition hover:bg-white/5 text-left
-                                    ${seciliPartner?.id === partner.id ? 'bg-green-900/50' : ''}`}
-                            >
-                                <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white relative">
-                                    {partner.ad ? partner.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
-                                    {partner.okunmamisVarMi && (
-                                        <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-400 border-2 border-green-950"></span>
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-white text-sm truncate">{partner.ad}</h3>
-                                    <p className="text-xs text-white/40 truncate">{partner.sonMesaj}</p>
-                                </div>
-                            </button>
-                        ))
+                        <>
+                            {sohbetler.length === 0 ? (
+                                <p className="p-6 text-center text-sm text-white/40">Henüz bir mesajınız yok.</p>
+                            ) : (
+                                sohbetler.map(partner => (
+                                    <button
+                                        key={partner.id}
+                                        onClick={() => {
+                                            setSeciliPartner(partner);
+                                            setMobilListeAcik(false); // Mobilde listeyi gizle, sohbeti aç
+                                        }}
+                                        className={`w-full flex items-center gap-3 p-4 border-b border-white/5 transition hover:bg-white/5 text-left
+                                            ${seciliPartner?.id === partner.id ? 'bg-green-900/50' : ''}`}
+                                    >
+                                        <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white relative">
+                                            {partner.ad ? partner.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
+                                            {partner.okunmamisVarMi && (
+                                                <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-400 border-2 border-green-950"></span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-bold text-white text-sm truncate">{partner.ad}</h3>
+                                            <p className="text-xs text-white/40 truncate">{partner.sonMesaj}</p>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </>
                     )}
                 </div>
             </div>

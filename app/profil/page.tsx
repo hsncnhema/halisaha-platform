@@ -96,13 +96,15 @@ export default function ProfilPage() {
       setIlanlar(ilanData || []);
 
       // Arkadaşlar (Kabul edilmiş) sayısını bul
-      const { data: arkadaslarData } = await supabase
+      const { count } = await supabase
         .from('arkadasliklar')
-        .select('*')
-        .eq('durum', 'kabul_edildi')
-        .or(`gonderen_id.eq.${user.id},alici_id.eq.${user.id}`);
+        .select('id', { count: 'exact' })
+        .or(
+          `and(gonderen_id.eq.${user.id},durum.eq.kabul),` +
+          `and(alici_id.eq.${user.id},durum.eq.kabul)`
+        );
 
-      setArkadasSayisi(arkadaslarData?.length || 0);
+      setArkadasSayisi(count || 0);
 
       setYukleniyor(false);
     };

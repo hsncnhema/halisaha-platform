@@ -42,6 +42,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [tip, setTip] = useState<KullaniciTipi>(null);
   const [ad, setAd] = useState<string>('Misafir');
   const [girisYapti, setGirisYapti] = useState(false);
+  const [istekSayisi, setIstekSayisi] = useState(0);
 
   useEffect(() => {
     let aktif = true;
@@ -69,6 +70,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       setTip((profile?.tip as KullaniciTipi) ?? 'futbolcu');
       setAd(profile?.ad || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Kullanici');
       setGirisYapti(true);
+
+      // Bildirimleri Çek
+      const { count } = await supabase
+        .from('arkadasliklar')
+        .select('id', { count: 'exact' })
+        .eq('alici_id', user.id)
+        .eq('durum', 'beklemede');
+
+      if (!aktif) return;
+      setIstekSayisi(count || 0);
+
+      const channel = supabase.channel('sidebar-bildirimler')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'arkadasliklar',
+          filter: `alici_id=eq.${user.id}`
+        }, () => {
+          setIstekSayisi(prev => prev + 1);
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+
     };
 
     const {
@@ -79,11 +106,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     void kullaniciYukle();
 
+    // Mesajlar sayfasındaysak bildirimi temizle
+    if (pathname === '/mesajlar') {
+      setIstekSayisi(0);
+    }
+
     return () => {
       aktif = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   const gorunenNavItems = useMemo(
     () =>
@@ -151,7 +183,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
                   }`}
               >
-                <span>{item.icon}</span>
+                <div className="relative">
+                  <span>{item.icon}</span>
+                  {item.href === '/mesajlar' && istekSayisi > 0 && (
+                    <span className="absolute -top-1 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {istekSayisi}
+                    </span>
+                  )}
+                </div>
                 <span>{item.label}</span>
               </Link>
             );

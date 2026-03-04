@@ -21,7 +21,7 @@ type ProfilData = {
 export default function BaskaProfilPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const [profil, setProfil] = useState<ProfilData | null>(null);
-    const [arkadaslikDurumu, setArkadaslikDurumu] = useState<'yok' | 'istek_gonderildi' | 'arkadas'>('yok');
+    const [arkadaslikDurumu, setArkadaslikDurumu] = useState<'yok' | 'beklemede' | 'kabul'>('yok');
     const [mevcutKullaniciId, setMevcutKullaniciId] = useState<string | null>(null);
     const [yukleniyor, setYukleniyor] = useState(true);
 
@@ -32,7 +32,6 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                 const basvuranId = user?.id;
                 setMevcutKullaniciId(basvuranId || null);
 
-                // Profil Bilgilerini Çek
                 const { data: profilData, error: profilHata } = await supabase
                     .from('profiles')
                     .select('*, futbolcular(*)')
@@ -42,21 +41,23 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                 if (profilHata) throw profilHata;
                 setProfil(profilData as ProfilData);
 
-                // Arkadaşlık Durumu Kontrolü
                 if (basvuranId && basvuranId !== id) {
                     const { data: arkadaslikData } = await supabase
                         .from('arkadasliklar')
-                        .select('*')
-                        .or(`and(gonderen_id.eq.${basvuranId},alici_id.eq.${id}),and(gonderen_id.eq.${id},alici_id.eq.${basvuranId})`)
+                        .select('id, durum')
+                        .or(
+                            `and(gonderen_id.eq.${basvuranId},alici_id.eq.${id}),` +
+                            `and(gonderen_id.eq.${id},alici_id.eq.${basvuranId})`
+                        )
                         .maybeSingle();
 
-                    if (arkadaslikData) {
-                        if (arkadaslikData.durum === 'kabul') {
-                            setArkadaslikDurumu('arkadas');
-                        } else if (arkadaslikData.durum === 'beklemede') {
-                            setArkadaslikDurumu('istek_gonderildi');
-                        }
+                    if (arkadaslikData && (arkadaslikData.durum === 'kabul' || arkadaslikData.durum === 'beklemede')) {
+                        setArkadaslikDurumu(arkadaslikData.durum);
+                    } else {
+                        setArkadaslikDurumu('yok');
                     }
+                } else {
+                    setArkadaslikDurumu('yok');
                 }
             } catch (err) {
                 console.error('Profil getirilemedi:', err);
@@ -64,6 +65,7 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                 setYukleniyor(false);
             }
         };
+
         getir();
     }, [id]);
 
@@ -71,7 +73,7 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
         try {
             const { data: { user: kullanici } } = await supabase.auth.getUser();
             if (!kullanici) {
-                alert("Arkadaş eklemek için giriş yapmalısınız.");
+                alert('Arkadaş eklemek için giriş yapmalısınız.');
                 return;
             }
 
@@ -91,11 +93,10 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                 .insert([{ gonderen_id: kullanici.id, alici_id: id, durum: 'beklemede' }]);
 
             if (error) throw error;
-            setArkadaslikDurumu('istek_gonderildi');
-
+            setArkadaslikDurumu('beklemede');
         } catch (err: any) {
             console.error('Arkadaş ekleme hatası:', err);
-            alert(err.message || "Arkadaş eklenirken bir hata oluştu.");
+            alert(err.message || 'Arkadaş eklenirken bir hata oluştu.');
         }
     };
 
@@ -158,20 +159,23 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
                         <div className="mt-6">
                             {mevcutKullaniciId !== id && (
                                 <>
-                                    {arkadaslikDurumu === 'arkadas' && (
-                                        <button disabled className="rounded-xl border border-white/20 bg-white/10 px-6 py-2 text-sm font-bold text-white/70 cursor-not-allowed">
-                                            ✓ Arkadaşsınız
-                                        </button>
-                                    )}
-                                    {arkadaslikDurumu === 'istek_gonderildi' && (
-                                        <button disabled className="rounded-xl border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 text-sm font-bold text-yellow-500 cursor-not-allowed">
-                                            Kabul Bekleniyor
-                                        </button>
-                                    )}
                                     {arkadaslikDurumu === 'yok' && (
                                         <button onClick={arkadasEkle} className="rounded-xl bg-green-600 px-6 py-2 text-sm font-bold text-white transition hover:bg-green-500">
                                             Arkadaş Ekle
                                         </button>
+                                    )}
+                                    {arkadaslikDurumu === 'beklemede' && (
+                                        <button disabled className="rounded-xl border border-white/20 bg-white/10 px-6 py-2 text-sm font-bold text-white/70 cursor-not-allowed">
+                                            İstek Gönderildi
+                                        </button>
+                                    )}
+                                    {arkadaslikDurumu === 'kabul' && (
+                                        <Link
+                                            href={`/mesajlar?kisi=${id}`}
+                                            className="inline-flex rounded-xl bg-green-600 px-6 py-2 text-sm font-bold text-white transition hover:bg-green-500"
+                                        >
+                                            Mesaj Gönder
+                                        </Link>
                                     )}
                                 </>
                             )}
@@ -182,4 +186,3 @@ export default function BaskaProfilPage({ params }: { params: Promise<{ id: stri
         </div>
     );
 }
-
