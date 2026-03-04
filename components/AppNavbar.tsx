@@ -22,55 +22,78 @@ export default function AppNavbar({ onToggle }: AppNavbarProps) {
   const [aramaMetni, setAramaMetni] = useState('');
   const [aramaSonuclari, setAramaSonuclari] = useState<AramaSonucu[]>([]);
   const [aramaYukleniyor, setAramaYukleniyor] = useState(false);
-  const [bildirimSayisi, setBildirimSayisi] = useState(0);
+  const [mesajBildirim, setMesajBildirim] = useState(0);
   const pathname = usePathname();
   const aramaAlaniRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    let aktif = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const kontrol = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!aktif) return;
+
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('ad')
           .eq('id', user.id)
           .single();
+        if (!aktif) return;
+
         setKullanici({ id: user.id, ad: profile?.ad || '' });
 
-        // Bildirim sayısını çek
         const { count } = await supabase
-          .from('arkadasliklar')
+          .from('mesajlar')
           .select('id', { count: 'exact' })
           .eq('alici_id', user.id)
-          .eq('durum', 'beklemede');
+          .eq('okundu', false);
 
-        setBildirimSayisi(count || 0);
+        if (!aktif) return;
+        setMesajBildirim(pathname === '/mesajlar' ? 0 : (count || 0));
 
-        // Realtime bildirimleri dinle
-        const channel = supabase.channel('bildirimler')
+        channel = supabase.channel(`okunmamis-mesajlar-${user.id}`)
           .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
-            table: 'arkadasliklar',
+            table: 'mesajlar',
             filter: `alici_id=eq.${user.id}`
           }, () => {
-            setBildirimSayisi(prev => prev + 1);
+            if (pathname !== '/mesajlar') {
+              setMesajBildirim((prev) => prev + 1);
+            }
           })
           .subscribe();
-
-        return () => {
-          supabase.removeChannel(channel);
-        };
+      } else {
+        setKullanici(null);
+        setMesajBildirim(0);
       }
     };
-    kontrol();
-  }, []);
+
+    void kontrol();
+
+    return () => {
+      aktif = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (pathname === '/mesajlar') {
-      setBildirimSayisi(0);
+      setMesajBildirim(0);
     }
   }, [pathname]);
+
+  useEffect(() => {
+    const sifirla = () => setMesajBildirim(0);
+    window.addEventListener('mesaj-bildirim-sifirla', sifirla);
+    return () => {
+      window.removeEventListener('mesaj-bildirim-sifirla', sifirla);
+    };
+  }, []);
 
   useEffect(() => {
     if (!aramaAcik) return;
@@ -162,15 +185,17 @@ export default function AppNavbar({ onToggle }: AppNavbarProps) {
               </button>
               <Link
                 href="/mesajlar"
-                className="relative inline-flex items-center justify-center"
+                className="inline-flex items-center justify-center"
                 aria-label="Mesajlar"
               >
-                <MessageCircle className="w-5 h-5 text-white/70 hover:text-white transition" />
-                {bildirimSayisi > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white pointer-events-none">
-                    {bildirimSayisi}
-                  </span>
-                )}
+                <div className="relative">
+                  <MessageCircle className="w-5 h-5 text-white/70 hover:text-white transition" />
+                  {mesajBildirim > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                      {mesajBildirim}
+                    </span>
+                  )}
+                </div>
               </Link>
               <Link href="/profil">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white transition hover:bg-green-500">
@@ -231,3 +256,5 @@ export default function AppNavbar({ onToggle }: AppNavbarProps) {
     </header>
   );
 }
+
+

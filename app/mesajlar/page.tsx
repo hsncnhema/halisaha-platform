@@ -69,6 +69,27 @@ function MesajlarIcerik() {
     }, []);
 
     useEffect(() => {
+        if (!kullanici) return;
+
+        const tumMesajlariOkunduYap = async () => {
+            const { error } = await supabase
+                .from('mesajlar')
+                .update({ okundu: true })
+                .eq('alici_id', kullanici.id)
+                .eq('okundu', false);
+
+            if (error) {
+                console.error('Tum mesajlar okundu guncelleme hatasi:', error);
+                return;
+            }
+
+            window.dispatchEvent(new CustomEvent('mesaj-bildirim-sifirla'));
+        };
+
+        void tumMesajlariOkunduYap();
+    }, [kullanici?.id]);
+
+    useEffect(() => {
         if (kisiId) {
             setAktifSohbet(kisiId);
             setAktifSekme('mesajlar');
@@ -523,3 +544,4 @@ export default function MesajlarPage() {
         </Suspense>
     );
 }
+

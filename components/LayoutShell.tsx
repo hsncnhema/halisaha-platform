@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react';
 import AppNavbar from '@/components/AppNavbar';
 import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { User, MessageCircle, Search } from 'lucide-react';
 
@@ -24,6 +25,8 @@ export default function LayoutShell({
   const [aramaMetni, setAramaMetni] = useState('');
   const [aramaSonuclari, setAramaSonuclari] = useState<AramaSonucu[]>([]);
   const [aramaYukleniyor, setAramaYukleniyor] = useState(false);
+  const [mesajBildirim, setMesajBildirim] = useState(0);
+  const pathname = usePathname();
   const aramaAlaniRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -50,6 +53,53 @@ export default function LayoutShell({
     };
   }, []);
 
+  useEffect(() => {
+    if (!kullanici?.id) {
+      setMesajBildirim(0);
+      return;
+    }
+
+    let aktif = true;
+
+    const okunmamisMesajlariGetir = async () => {
+      const { count } = await supabase
+        .from('mesajlar')
+        .select('id', { count: 'exact' })
+        .eq('alici_id', kullanici.id)
+        .eq('okundu', false);
+
+      if (!aktif) return;
+      setMesajBildirim(pathname === '/mesajlar' ? 0 : (count || 0));
+    };
+
+    void okunmamisMesajlariGetir();
+
+    const channel = supabase.channel(`okunmamis-mesajlar-desktop-${kullanici.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'mesajlar',
+        filter: `alici_id=eq.${kullanici.id}`
+      }, () => {
+        if (pathname !== '/mesajlar') {
+          setMesajBildirim((prev) => prev + 1);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      aktif = false;
+      supabase.removeChannel(channel);
+    };
+  }, [kullanici?.id, pathname]);
+
+  useEffect(() => {
+    const sifirla = () => setMesajBildirim(0);
+    window.addEventListener('mesaj-bildirim-sifirla', sifirla);
+    return () => {
+      window.removeEventListener('mesaj-bildirim-sifirla', sifirla);
+    };
+  }, []);
   useEffect(() => {
     if (!aramaAcik) return;
 
@@ -125,7 +175,14 @@ export default function LayoutShell({
               className="inline-flex items-center justify-center"
               aria-label="Mesajlar"
             >
-              <MessageCircle className="w-5 h-5 text-white/70 hover:text-white transition" />
+              <div className="relative">
+                <MessageCircle className="w-5 h-5 text-white/70 hover:text-white transition" />
+                {mesajBildirim > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                    {mesajBildirim}
+                  </span>
+                )}
+              </div>
             </Link>
             <Link
               href="/profil"
@@ -191,3 +248,4 @@ export default function LayoutShell({
     </div>
   );
 }
+
