@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 type IlanDetay = {
   id: string;
   user_id: string;
