@@ -1,10 +1,11 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useCallback, useEffect, useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
+import { Plus, Search, X } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,10 @@ function MesajlarIcerik() {
     const [istekler, setIstekler] = useState<Istek[]>([]);
     const [aktifSekme, setAktifSekme] = useState<'mesajlar' | 'istekler'>('mesajlar');
     const [aktifSohbet, setAktifSohbet] = useState<string | null>(null);
+    const [yeniSohbetAcik, setYeniSohbetAcik] = useState(false);
+    const [sohbetAramaMetni, setSohbetAramaMetni] = useState('');
+    const [sohbetAramaSonuclari, setSohbetAramaSonuclari] = useState<{ id: string, ad: string, avatar_url: string | null }[]>([]);
+    const [aramaYukleniyor, setAramaYukleniyor] = useState(false);
     const mesajlarEndRef = useRef<HTMLDivElement>(null);
 
     // Oturum ve Sohbet Listesi Getirme
@@ -83,18 +88,17 @@ function MesajlarIcerik() {
                 return;
             }
 
-            window.dispatchEvent(new CustomEvent('mesaj-bildirim-sifirla'));
         };
 
         void tumMesajlariOkunduYap();
     }, [kullanici?.id]);
 
     useEffect(() => {
-        if (kisiId) {
-            setAktifSohbet(kisiId);
-            setAktifSekme('mesajlar');
-        }
-    }, [kisiId]);
+        if (!kisiId || yukleniyor) return;
+
+        setAktifSohbet(kisiId);
+        setAktifSekme('mesajlar');
+    }, [kisiId, sohbetler, yukleniyor]);
 
     useEffect(() => {
         if (!aktifSohbet) return;
@@ -132,6 +136,29 @@ function MesajlarIcerik() {
 
         void aktifSohbetiAc();
     }, [aktifSohbet, seciliPartner?.id, sohbetler]);
+
+    useEffect(() => {
+        if (!yeniSohbetAcik || sohbetAramaMetni.length < 2) {
+            setSohbetAramaSonuclari([]);
+            return;
+        }
+
+        const ara = async () => {
+            setAramaYukleniyor(true);
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, ad, avatar_url')
+                .ilike('ad', `%${sohbetAramaMetni}%`)
+                .neq('id', kullanici?.id)
+                .limit(5);
+
+            setSohbetAramaSonuclari(data || []);
+            setAramaYukleniyor(false);
+        };
+
+        const timer = setTimeout(ara, 300);
+        return () => clearTimeout(timer);
+    }, [sohbetAramaMetni, yeniSohbetAcik, kullanici?.id]);
 
     const istekleriCek = async (userId: string) => {
         const { data } = await supabase
@@ -222,6 +249,31 @@ function MesajlarIcerik() {
     };
 
     // Seçili Partnerin Mesajlarını Çekme
+    const mesajlariYukle = useCallback(async (kisiId: string) => {
+        if (!kullanici) return;
+
+        const { data, error } = await supabase
+            .from('mesajlar')
+            .select('*')
+            .or(
+                `and(gonderen_id.eq.${kullanici.id},alici_id.eq.${kisiId}),` +
+                `and(gonderen_id.eq.${kisiId},alici_id.eq.${kullanici.id})`
+            )
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Mesajlar cekilemedi:', error);
+            return;
+        }
+
+        setMesajlar((data || []) as Mesaj[]);
+    }, [kullanici]);
+
+    useEffect(() => {
+        if (!aktifSohbet) return;
+        void mesajlariYukle(aktifSohbet);
+    }, [aktifSohbet, mesajlariYukle]);
+
     useEffect(() => {
         if (!kullanici || !seciliPartner) return;
 
@@ -255,46 +307,24 @@ function MesajlarIcerik() {
 
     // Realtime Mesaj Dinleyici
     useEffect(() => {
-        if (!kullanici) return;
+        if (!aktifSohbet || !kullanici?.id) return;
 
         const channel = supabase
-            .channel('mesajlar-changes')
+            .channel(`mesajlar-${aktifSohbet}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'mesajlar',
-                filter: `alici_id=eq.${kullanici.id}` // Sadece bana gelenler
+                filter: `alici_id=eq.${kullanici.id}`
             }, (payload: any) => {
-                const yeniMesaj = payload.new as Mesaj;
-
-                if (seciliPartner && (yeniMesaj.gonderen_id === seciliPartner.id)) {
-                    // Açık sohbetteysek mesaja ekle
-                    setMesajlar(prev => [...prev, yeniMesaj]);
-                    // Ve okundu olarak isaretle
-                    supabase.from('mesajlar').update({ okundu: true }).eq('id', yeniMesaj.id).then();
-                } else {
-                    // Farklı sohbetteyse sadece listeyi güncelle
-                    sohbetListesiCek(kullanici.id);
-                }
-            })
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'mesajlar',
-                filter: `gonderen_id=eq.${kullanici.id}` // Benim gönderdiklerim (Sekme senkronizasyonu)
-            }, (payload: any) => {
-                const yeniMesaj = payload.new as Mesaj;
-                if (seciliPartner && (yeniMesaj.alici_id === seciliPartner.id)) {
-                    // Gönderilen mesajı aynı anda arayüze eklemeyi önlemek için ID check yapabiliriz
-                    // Fakat form submit anında optimistic UI update yapmıyorsak direkt ekleyebiliriz
-                }
+                setMesajlar((prev) => [...prev, payload.new as Mesaj]);
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [kullanici, seciliPartner]);
+    }, [aktifSohbet, kullanici?.id]);
 
     // Mesajlar eklendikçe en alta kaydır
     useEffect(() => {
@@ -357,10 +387,10 @@ function MesajlarIcerik() {
             <div className={`w-full md:w-80 flex flex-col border-r border-white/10 ${mobilListeAcik ? 'flex' : 'hidden md:flex'}`}>
                 {/* Sol Kolon Header (Sekmeler) */}
                 <div className="shrink-0 border-b border-white/10">
-                    <div className="flex bg-white/5">
+                    <div className="flex bg-white/5 relative">
                         <button
                             onClick={() => setAktifSekme('mesajlar')}
-                            className={`flex-1 py-4 text-sm text-center transition tracking-wide ${aktifSekme === 'mesajlar'
+                            className={`flex-1 py-4 text-sm text-center transition tracking-wide pr-8 ${aktifSekme === 'mesajlar'
                                 ? 'border-b-2 border-green-400 text-white font-bold'
                                 : 'text-white/40 hover:text-white'
                                 }`}
@@ -369,7 +399,7 @@ function MesajlarIcerik() {
                         </button>
                         <button
                             onClick={() => setAktifSekme('istekler')}
-                            className={`flex-1 py-4 text-sm text-center flex items-center justify-center gap-2 transition tracking-wide ${aktifSekme === 'istekler'
+                            className={`flex-1 py-4 text-sm text-center flex items-center justify-center gap-2 transition tracking-wide pr-8 ${aktifSekme === 'istekler'
                                 ? 'border-b-2 border-green-400 text-white font-bold'
                                 : 'text-white/40 hover:text-white'
                                 }`}
@@ -380,6 +410,13 @@ function MesajlarIcerik() {
                                     {istekler.length}
                                 </span>
                             )}
+                        </button>
+                        <button
+                            onClick={() => setYeniSohbetAcik(true)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 hover:bg-white/10 transition"
+                            title="Yeni Sohbet Başlat"
+                        >
+                            <Plus className="w-5 h-5 text-white/70 hover:text-white transition" />
                         </button>
                     </div>
                 </div>
@@ -533,6 +570,56 @@ function MesajlarIcerik() {
                     </>
                 )}
             </div>
+
+            {/* YENİ SOHBET MODALI */}
+            {yeniSohbetAcik && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setYeniSohbetAcik(false)}>
+                    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-green-950/95 p-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-white">Yeni Sohbet Başlat</h3>
+                            <button onClick={() => setYeniSohbetAcik(false)} className="text-white/50 hover:text-white transition rounded-full hover:bg-white/10 p-1">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                            <input
+                                type="text"
+                                placeholder="Oyuncu ara..."
+                                value={sohbetAramaMetni}
+                                onChange={(e) => setSohbetAramaMetni(e.target.value)}
+                                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-4 text-sm text-white placeholder:text-white/30 focus:border-green-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
+                            {aramaYukleniyor && <div className="p-3 text-center text-sm text-white/40">Aranıyor...</div>}
+                            {!aramaYukleniyor && sohbetAramaMetni.length >= 2 && sohbetAramaSonuclari.length === 0 && (
+                                <div className="p-3 text-center text-sm text-white/40">Sonuç bulunamadı.</div>
+                            )}
+                            {sohbetAramaMetni.length < 2 && (
+                                <div className="p-3 text-center text-xs text-white/30">Aramak için en az 2 karakter girin.</div>
+                            )}
+                            {sohbetAramaSonuclari.map((kisi) => (
+                                <button
+                                    key={kisi.id}
+                                    onClick={() => {
+                                        setAktifSohbet(kisi.id);
+                                        setYeniSohbetAcik(false);
+                                        setSohbetAramaMetni('');
+                                    }}
+                                    className="flex items-center gap-3 rounded-xl p-2 hover:bg-white/10 transition text-left"
+                                >
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white shrink-0">
+                                        {kisi.ad ? kisi.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
+                                    </div>
+                                    <span className="text-sm font-bold text-white truncate">{kisi.ad}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
