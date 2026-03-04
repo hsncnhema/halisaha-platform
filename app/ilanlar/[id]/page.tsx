@@ -4,8 +4,11 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useEffect, useState, use } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 type IlanDetayData = {
   id: string;
+  user_id: string;
   kategori: string;
   ilce: string;
   baslik: string;
@@ -93,7 +96,17 @@ export default function IlanDetayPage({ params }: { params: Promise<{ id: string
 
           <div className="mt-6 border-t border-white/10 pt-4">
             <p className="mb-4 text-sm text-white/40">
-              Paylaşan: {ilan.profiles?.ad || 'Anonim'}
+              Paylaşan:{' '}
+              {ilan.user_id && ilan.profiles?.ad ? (
+                <Link
+                  href={`/profil/${ilan.user_id}`}
+                  className="font-semibold text-green-400 hover:underline"
+                >
+                  {ilan.profiles.ad}
+                </Link>
+              ) : (
+                'Anonim'
+              )}
             </p>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(`Sahagram'da "${ilan.baslik}" ilanınızı gördüm, iletişime geçmek istedim.`)}`}

@@ -58,6 +58,37 @@ export default function AnaSayfa() {
   const [kullaniciIlce, setKullaniciIlce] = useState<string | null>(null);
   const [haritaMerkez, setHaritaMerkez] = useState(ISTANBUL_MERKEZ);
   const [opacity, setOpacity] = useState(1);
+  const [kullanici, setKullanici] = useState<{ id: string; ad: string } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const kontrol = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('ad')
+          .eq('id', user.id)
+          .single();
+        setKullanici({ id: user.id, ad: profile?.ad || '' });
+      }
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      kontrol();
+    });
+
+    kontrol();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const yukle = async () => {
@@ -215,22 +246,24 @@ export default function AnaSayfa() {
               Oyuncu / Takım Ara
             </Link>
           </div>
-          <div className="mb-16 flex justify-center gap-4">
-            <a href="#" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-sm text-white backdrop-blur-sm transition hover:bg-white/15 hover:border-white/30">
-              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-              <div className="text-left">
-                <div className="text-xs leading-none text-white/50">Download on the</div>
-                <div className="text-base font-bold leading-tight">App Store</div>
-              </div>
-            </a>
-            <a href="#" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-sm text-white backdrop-blur-sm transition hover:bg-white/15 hover:border-white/30">
-              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.49c.41.41 1.02.41 1.63.2l11.02-6.37-2.73-2.73-9.92 7.27c-.41.41-.41 1.22 0 1.63zm-.61-2.24V2.75c0-.61.2-1.02.61-1.22L13.1 11.45 3.18 21.37c-.41-.2-.61-.61-.61-1.12zM20.4 10.43l-3.06-1.73-3.06 3.06 2.86 2.86 3.27-1.94c.82-.41.82-1.63-.01-2.25zM5.62 1.25 16.33 7.4l-2.73 2.73L5.01.98c.2-.2.41-.2.61.27z"/></svg>
-              <div className="text-left">
-                <div className="text-xs leading-none text-white/50">GET IT ON</div>
-                <div className="text-base font-bold leading-tight">Google Play</div>
-              </div>
-            </a>
-          </div>
+          {!kullanici && (
+            <div className="mb-16 flex flex-wrap justify-center gap-3">
+              <a href="#" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-sm text-white backdrop-blur-sm transition hover:bg-white/15 hover:border-white/30">
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
+                <div className="text-left">
+                  <div className="text-xs leading-none text-white/50">Download on the</div>
+                  <div className="text-base font-bold leading-tight">App Store</div>
+                </div>
+              </a>
+              <a href="#" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-sm text-white backdrop-blur-sm transition hover:bg-white/15 hover:border-white/30">
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.49c.41.41 1.02.41 1.63.2l11.02-6.37-2.73-2.73-9.92 7.27c-.41.41-.41 1.22 0 1.63zm-.61-2.24V2.75c0-.61.2-1.02.61-1.22L13.1 11.45 3.18 21.37c-.41-.2-.61-.61-.61-1.12zM20.4 10.43l-3.06-1.73-3.06 3.06 2.86 2.86 3.27-1.94c.82-.41.82-1.63-.01-2.25zM5.62 1.25 16.33 7.4l-2.73 2.73L5.01.98c.2-.2.41-.2.61.27z" /></svg>
+                <div className="text-left">
+                  <div className="text-xs leading-none text-white/50">GET IT ON</div>
+                  <div className="text-base font-bold leading-tight">Google Play</div>
+                </div>
+              </a>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               { deger: '500+', etiket: 'Saha' },
@@ -354,13 +387,12 @@ export default function AnaSayfa() {
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <div className="flex flex-wrap gap-2">
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-bold ${
-                              oyuncuKategori
-                                ? 'border border-green-500/30 bg-green-500/20 text-green-300'
-                                : takimKategori
-                                  ? 'border border-blue-500/30 bg-blue-500/20 text-blue-300'
-                                  : 'border border-white/15 bg-white/10 text-white/70'
-                            }`}
+                            className={`rounded-full px-3 py-1 text-xs font-bold ${oyuncuKategori
+                              ? 'border border-green-500/30 bg-green-500/20 text-green-300'
+                              : takimKategori
+                                ? 'border border-blue-500/30 bg-blue-500/20 text-blue-300'
+                                : 'border border-white/15 bg-white/10 text-white/70'
+                              }`}
                           >
                             {ilan.kategori}
                           </span>
@@ -402,26 +434,28 @@ export default function AnaSayfa() {
       )}
 
       {/* 3 ADIMDA BAŞLA */}
-      <section className="bg-green-900/30 py-16">
-        <div className="mx-auto max-w-4xl px-4">
-          <h2 className="mb-8 text-center text-2xl font-black text-white">3 Adımda Başla</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { adim: '1', baslik: 'Kayıt Ol', aciklama: 'Ücretsiz profil oluştur.' },
-              { adim: '2', baslik: 'Keşfet', aciklama: 'Saha ve oyuncu bul.' },
-              { adim: '3', baslik: 'Sahaya Çık', aciklama: 'Maçını ayarla, oyna.' },
-            ].map((item) => (
-              <div key={item.adim} className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-lg font-extrabold text-white">
-                  {item.adim}
+      {!kullanici && (
+        <section className="bg-green-900/30 py-16">
+          <div className="mx-auto max-w-4xl px-4">
+            <h2 className="mb-8 text-center text-2xl font-black text-white">3 Adımda Başla</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                { adim: '1', baslik: 'Kayıt Ol', aciklama: 'Ücretsiz profil oluştur.' },
+                { adim: '2', baslik: 'Keşfet', aciklama: 'Saha ve oyuncu bul.' },
+                { adim: '3', baslik: 'Sahaya Çık', aciklama: 'Maçını ayarla, oyna.' },
+              ].map((item) => (
+                <div key={item.adim} className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-lg font-extrabold text-white">
+                    {item.adim}
+                  </div>
+                  <div className="text-sm font-bold text-white">{item.baslik}</div>
+                  <div className="mt-1 text-xs text-white/40">{item.aciklama}</div>
                 </div>
-                <div className="text-sm font-bold text-white">{item.baslik}</div>
-                <div className="mt-1 text-xs text-white/40">{item.aciklama}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FOOTER */}
       <footer className="border-t border-white/10 bg-green-950 pb-6 pt-10">
@@ -444,11 +478,11 @@ export default function AnaSayfa() {
               <h5 className="mb-3 text-xs font-bold uppercase tracking-wider text-white/30">Uygulamayı İndir</h5>
               <div className="flex flex-col gap-2">
                 <a href="#" className="inline-flex w-fit items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-white transition hover:bg-white/20">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
                   <span className="text-xs font-semibold">App Store</span>
                 </a>
                 <a href="#" className="inline-flex w-fit items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-white transition hover:bg-white/20">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.49c.41.41 1.02.41 1.63.2l11.02-6.37-2.73-2.73-9.92 7.27c-.41.41-.41 1.22 0 1.63zm-.61-2.24V2.75c0-.61.2-1.02.61-1.22L13.1 11.45 3.18 21.37c-.41-.2-.61-.61-.61-1.12zM20.4 10.43l-3.06-1.73-3.06 3.06 2.86 2.86 3.27-1.94c.82-.41.82-1.63-.01-2.25zM5.62 1.25 16.33 7.4l-2.73 2.73L5.01.98c.2-.2.41-.2.61.27z"/></svg>
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.49c.41.41 1.02.41 1.63.2l11.02-6.37-2.73-2.73-9.92 7.27c-.41.41-.41 1.22 0 1.63zm-.61-2.24V2.75c0-.61.2-1.02.61-1.22L13.1 11.45 3.18 21.37c-.41-.2-.61-.61-.61-1.12zM20.4 10.43l-3.06-1.73-3.06 3.06 2.86 2.86 3.27-1.94c.82-.41.82-1.63-.01-2.25zM5.62 1.25 16.33 7.4l-2.73 2.73L5.01.98c.2-.2.41-.2.61.27z" /></svg>
                   <span className="text-xs font-semibold">Google Play</span>
                 </a>
               </div>

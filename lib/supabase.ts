@@ -257,6 +257,71 @@ export async function kullaniciyiYonlendir(user: User | null) {
   return yonlendirmeYoluGetir(supabase, user.id);
 }
 
+export async function arkadaslikIstegiGonder(alici_id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Giriş yapılmamış');
+
+  const { data, error } = await supabase
+    .from('arkadasliklar')
+    .insert({ gonderen_id: user.id, alici_id })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function arkadasliklariGetir(user_id: string) {
+  const { data, error } = await supabase
+    .from('arkadasliklar')
+    .select(`
+      id, durum, created_at,
+      gonderen:profiles!gonderen_id(id, ad, avatar_url),
+      alici:profiles!alici_id(id, ad, avatar_url)
+    `)
+    .or(`gonderen_id.eq.${user_id},alici_id.eq.${user_id}`);
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function arkadaslikKabul(arkadaslik_id: string) {
+  const { data, error } = await supabase
+    .from('arkadasliklar')
+    .update({ durum: 'kabul' })
+    .eq('id', arkadaslik_id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function arkadaslikReddet(arkadaslik_id: string) {
+  const { data, error } = await supabase
+    .from('arkadasliklar')
+    .update({ durum: 'reddedildi' })
+    .eq('id', arkadaslik_id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function arkadasMi(user_id: string, diger_id: string) {
+  const { data, error } = await supabase
+    .from('arkadasliklar')
+    .select('id, durum')
+    .or(
+      `and(gonderen_id.eq.${user_id},alici_id.eq.${diger_id}),and(gonderen_id.eq.${diger_id},alici_id.eq.${user_id})`
+    )
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function createServerSupabaseClient() {
   const [{ createServerClient }, { cookies }] = await Promise.all([
     import('@supabase/auth-helpers-nextjs'),
