@@ -26,7 +26,6 @@ const navItems: NavItem[] = [
   { href: '/sahalar', label: 'Sahalar', icon: '\u{1F50D}' },
   { href: '/harita', label: 'Harita', icon: '\u{1F5FA}\uFE0F' },
   { href: '/ilanlar', label: 'Ilanlar', icon: '\u{1F4CB}' },
-  { href: '/mesajlar', label: 'Mesajlar', icon: '\u{1F4AC}', authOnly: true },
   { href: '/profil', label: 'Profil', icon: '\u{1F464}', authOnly: true },
   { href: '/admin', label: 'Admin', icon: '\u2699\uFE0F', adminOnly: true, authOnly: true },
 ];

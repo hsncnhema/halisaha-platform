@@ -1,64 +1,12 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-const MIN_VISIBLE_MS = 450;
-const FALLBACK_HIDE_MS = 12000;
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 export default function NavigationLoader() {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const [loading, setLoading] = useState(false);
-
-  const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startTimeRef = useRef(0);
-  const pathKeyRef = useRef(`${pathname}?${searchParams.toString()}`);
-
-  const temizleZamanlayicilar = useCallback(() => {
-    if (finishTimerRef.current) {
-      clearTimeout(finishTimerRef.current);
-      finishTimerRef.current = null;
-    }
-    if (fallbackTimerRef.current) {
-      clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-  }, []);
-
-  const yuklemeyiBaslat = useCallback(
-    (nextHref?: string) => {
-      temizleZamanlayicilar();
-      startTimeRef.current = Date.now();
-      setLoading(true);
-
-      if (nextHref) {
-        void router.prefetch(nextHref);
-      }
-
-      fallbackTimerRef.current = setTimeout(() => {
-        setLoading(false);
-      }, FALLBACK_HIDE_MS);
-    },
-    [router, temizleZamanlayicilar]
-  );
-
-  const yuklemeyiBitir = useCallback(() => {
-    const gecenSure = Date.now() - startTimeRef.current;
-    const bekleme = Math.max(0, MIN_VISIBLE_MS - gecenSure);
-
-    if (fallbackTimerRef.current) {
-      clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-
-    finishTimerRef.current = setTimeout(() => {
-      setLoading(false);
-    }, bekleme);
-  }, []);
+  const ilkRenderRef = useRef(true);
 
   useEffect(() => {
     const clickListener = (event: MouseEvent) => {
@@ -80,11 +28,11 @@ export default function NavigationLoader() {
       const ayniRota = nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search;
       if (ayniRota) return;
 
-      yuklemeyiBaslat(`${nextUrl.pathname}${nextUrl.search}`);
+      setLoading(true);
     };
 
     const popstateListener = () => {
-      yuklemeyiBaslat();
+      setLoading(true);
     };
 
     document.addEventListener('click', clickListener, true);
@@ -93,27 +41,39 @@ export default function NavigationLoader() {
     return () => {
       document.removeEventListener('click', clickListener, true);
       window.removeEventListener('popstate', popstateListener);
-      temizleZamanlayicilar();
     };
-  }, [temizleZamanlayicilar, yuklemeyiBaslat]);
+  }, []);
 
   useEffect(() => {
-    const pathKey = `${pathname}?${searchParams.toString()}`;
-    if (pathKeyRef.current === pathKey) return;
-
-    pathKeyRef.current = pathKey;
-
-    if (!loading) {
-      startTimeRef.current = Date.now();
-      const timer = setTimeout(() => {
-        setLoading(true);
-        yuklemeyiBitir();
-      }, 0);
-      return () => clearTimeout(timer);
+    if (ilkRenderRef.current) {
+      ilkRenderRef.current = false;
+      return;
     }
 
-    yuklemeyiBitir();
-  }, [loading, pathname, searchParams, yuklemeyiBitir]);
+    let aktif = true;
+    const baslatTimer = setTimeout(() => {
+      if (aktif) {
+        setLoading(true);
+      }
+    }, 0);
+    const minSure = new Promise((resolve) =>
+      setTimeout(resolve, 800)
+    );
+    const sayfaYuklendi = new Promise((resolve) =>
+      setTimeout(resolve, 100)
+    );
+
+    void Promise.all([minSure, sayfaYuklendi]).then(() => {
+      if (aktif) {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      aktif = false;
+      clearTimeout(baslatTimer);
+    };
+  }, [pathname]);
 
   if (!loading) return null;
 

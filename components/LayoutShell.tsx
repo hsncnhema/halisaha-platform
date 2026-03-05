@@ -54,52 +54,42 @@ export default function LayoutShell({
   }, []);
 
   useEffect(() => {
-    if (!kullanici?.id) {
-      setMesajBildirim(0);
-      return;
-    }
+    if (!kullanici) return;
 
-    let aktif = true;
-
-    const okunmamisMesajlariGetir = async () => {
+    const sayiGetir = async () => {
       const { count } = await supabase
         .from('mesajlar')
-        .select('id', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('alici_id', kullanici.id)
         .eq('okundu', false);
-
-      if (!aktif) return;
-      setMesajBildirim(pathname === '/mesajlar' ? 0 : (count || 0));
+      setMesajBildirim(count || 0);
     };
+    sayiGetir();
 
-    void okunmamisMesajlariGetir();
-
-    const channel = supabase.channel(`okunmamis-mesajlar-desktop-${kullanici.id}`)
+    const channel = supabase
+      .channel(`layout-mesaj-${kullanici.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'mesajlar',
         filter: `alici_id=eq.${kullanici.id}`
       }, () => {
-        if (pathname !== '/mesajlar') {
-          setMesajBildirim((prev) => prev + 1);
-        }
+        setMesajBildirim(prev => prev + 1);
       })
-      .subscribe();
+      .subscribe((status: string) => {
+        console.log('LayoutShell realtime:', status);
+      });
 
     return () => {
-      aktif = false;
       supabase.removeChannel(channel);
     };
-  }, [kullanici?.id, pathname]);
+  }, [kullanici?.id]);
 
   useEffect(() => {
-    const sifirla = () => setMesajBildirim(0);
-    window.addEventListener('mesaj-bildirim-sifirla', sifirla);
-    return () => {
-      window.removeEventListener('mesaj-bildirim-sifirla', sifirla);
-    };
-  }, []);
+    if (pathname === '/mesajlar') {
+      setMesajBildirim(0);
+    }
+  }, [pathname]);
   useEffect(() => {
     if (!aramaAcik) return;
 

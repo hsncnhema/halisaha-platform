@@ -1,11 +1,11 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { useCallback, useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search, X, Trash2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,11 +20,13 @@ type Mesaj = {
 
 type SohbetPartneri = {
     id: string;
+    partner_id: string;
     ad: string | null;
     avatar_url: string | null;
     sonMesaj: string;
     sonMesajTarihi: string;
     okunmamisVarMi: boolean;
+    okunmamisSayisi?: number;
 };
 
 type Istek = {
@@ -55,6 +57,7 @@ function MesajlarIcerik() {
     const [sohbetAramaMetni, setSohbetAramaMetni] = useState('');
     const [sohbetAramaSonuclari, setSohbetAramaSonuclari] = useState<{ id: string, ad: string, avatar_url: string | null }[]>([]);
     const [aramaYukleniyor, setAramaYukleniyor] = useState(false);
+    const [okunmamisSayilari, setOkunmamisSayilari] = useState<Record<string, number>>({});
     const mesajlarEndRef = useRef<HTMLDivElement>(null);
 
     // Oturum ve Sohbet Listesi Getirme
@@ -94,11 +97,11 @@ function MesajlarIcerik() {
     }, [kullanici?.id]);
 
     useEffect(() => {
-        if (!kisiId || yukleniyor) return;
-
-        setAktifSohbet(kisiId);
-        setAktifSekme('mesajlar');
-    }, [kisiId, sohbetler, yukleniyor]);
+        if (kisiId) {
+            setAktifSohbet(kisiId);
+            setAktifSekme('mesajlar');
+        }
+    }, [kisiId]);
 
     useEffect(() => {
         if (!aktifSohbet) return;
@@ -125,6 +128,7 @@ function MesajlarIcerik() {
 
             setSeciliPartner({
                 id: kisi.id,
+                partner_id: kisi.id,
                 ad: kisi.ad,
                 avatar_url: null,
                 sonMesaj: '',
@@ -236,6 +240,7 @@ function MesajlarIcerik() {
             if (!sohbetMap.has(partnerId)) {
                 sohbetMap.set(partnerId, {
                     id: partnerId,
+                    partner_id: partnerId,
                     ad: partner?.ad || 'Bilinmeyen Kullanıcı',
                     avatar_url: partner?.avatar_url || null,
                     sonMesaj: m.icerik,
@@ -245,35 +250,25 @@ function MesajlarIcerik() {
             }
         }
 
-        setSohbetler(Array.from(sohbetMap.values()));
+        const yeniSohbetler = Array.from(sohbetMap.values());
+        setSohbetler(yeniSohbetler);
+
+        const dict: Record<string, number> = {};
+        for (const sohbet of yeniSohbetler) {
+            const { count } = await supabase
+                .from('mesajlar')
+                .select('id', { count: 'exact', head: true })
+                .eq('gonderen_id', sohbet.id)
+                .eq('alici_id', userId)
+                .eq('okundu', false);
+
+            dict[sohbet.id] = count || 0;
+        }
+
+        setOkunmamisSayilari(dict);
     };
 
     // Seçili Partnerin Mesajlarını Çekme
-    const mesajlariYukle = useCallback(async (kisiId: string) => {
-        if (!kullanici) return;
-
-        const { data, error } = await supabase
-            .from('mesajlar')
-            .select('*')
-            .or(
-                `and(gonderen_id.eq.${kullanici.id},alici_id.eq.${kisiId}),` +
-                `and(gonderen_id.eq.${kisiId},alici_id.eq.${kullanici.id})`
-            )
-            .order('created_at', { ascending: true });
-
-        if (error) {
-            console.error('Mesajlar cekilemedi:', error);
-            return;
-        }
-
-        setMesajlar((data || []) as Mesaj[]);
-    }, [kullanici]);
-
-    useEffect(() => {
-        if (!aktifSohbet) return;
-        void mesajlariYukle(aktifSohbet);
-    }, [aktifSohbet, mesajlariYukle]);
-
     useEffect(() => {
         if (!kullanici || !seciliPartner) return;
 
@@ -318,6 +313,14 @@ function MesajlarIcerik() {
                 filter: `alici_id=eq.${kullanici.id}`
             }, (payload: any) => {
                 setMesajlar((prev) => [...prev, payload.new as Mesaj]);
+
+                const gonderenId = payload.new.gonderen_id;
+                if (gonderenId !== kullanici.id) {
+                    setOkunmamisSayilari(prev => ({
+                        ...prev,
+                        [gonderenId]: (prev[gonderenId] || 0) + 1
+                    }));
+                }
             })
             .subscribe();
 
@@ -364,6 +367,26 @@ function MesajlarIcerik() {
         } else {
             sohbetListesiCek(kullanici.id);
         }
+    };
+
+    const sohbetiSil = async (partnerId: string) => {
+        if (!kullanici) return;
+
+        const onay = confirm('Bu sohbeti silmek istiyor musunuz?');
+        if (!onay) return;
+
+        await supabase
+            .from('mesajlar')
+            .delete()
+            .or(
+                `and(gonderen_id.eq.${kullanici.id},alici_id.eq.${partnerId}),` +
+                `and(gonderen_id.eq.${partnerId},alici_id.eq.${kullanici.id})`
+            );
+
+        setSohbetler(prev =>
+            prev.filter(s => s.partner_id !== partnerId)
+        );
+        setAktifSohbet(null);
     };
 
     if (yukleniyor) {
@@ -464,29 +487,41 @@ function MesajlarIcerik() {
                             {sohbetler.length === 0 ? (
                                 <p className="p-6 text-center text-sm text-white/40">Henüz bir mesajınız yok.</p>
                             ) : (
-                                sohbetler.map(partner => (
-                                    <button
-                                        key={partner.id}
+                                sohbetler.map(sohbet => {
+                                    console.log('sohbet objesi:', JSON.stringify(sohbet));
+                                    console.log('okunmamisSayilari:', JSON.stringify(okunmamisSayilari));
+                                    return (
+                                    <div
+                                        key={sohbet.id}
                                         onClick={() => {
-                                            setSeciliPartner(partner);
-                                            setAktifSohbet(partner.id);
+                                            setSeciliPartner(sohbet);
+                                            setAktifSohbet(sohbet.id);
                                             setMobilListeAcik(false); // Mobilde listeyi gizle, sohbeti aç
                                         }}
                                         className={`w-full flex items-center gap-3 p-4 border-b border-white/5 transition hover:bg-white/5 text-left
-                                            ${seciliPartner?.id === partner.id ? 'bg-green-900/50' : ''}`}
+                                            ${seciliPartner?.id === sohbet.id ? 'bg-green-900/50' : ''}`}
                                     >
                                         <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-black text-white relative">
-                                            {partner.ad ? partner.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
-                                            {partner.okunmamisVarMi && (
-                                                <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-400 border-2 border-green-950"></span>
-                                            )}
+                                            {sohbet.ad ? sohbet.ad.charAt(0).toLocaleUpperCase('tr-TR') : '?'}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-bold text-white text-sm truncate">{partner.ad}</h3>
-                                            <p className="text-xs text-white/40 truncate">{partner.sonMesaj}</p>
+                                            <h3 className="font-bold text-white text-sm truncate">{sohbet.ad}</h3>
+                                            <p className="text-xs text-white/40 truncate">{sohbet.sonMesaj}</p>
                                         </div>
-                                    </button>
-                                ))
+                                        {(okunmamisSayilari[sohbet.id] || 0) > 0 && (
+                                            <span className="h-5 w-5 rounded-full bg-green-400 text-[10px] font-bold text-green-950 flex items-center justify-center flex-shrink-0">
+                                                {okunmamisSayilari[sohbet.id]}
+                                            </span>
+                                        )}
+                                        <button onClick={(event) => {
+                                            event.stopPropagation();
+                                            void sohbetiSil(sohbet.partner_id);
+                                        }}
+                                            className="ml-auto text-white/30 hover:text-red-400 transition flex-shrink-0">
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )})
                             )}
                         </>
                     )}
@@ -525,14 +560,17 @@ function MesajlarIcerik() {
                                 const isBenim = mesaj.gonderen_id === kullanici.id;
                                 return (
                                     <div key={mesaj.id} className={`flex ${isBenim ? 'justify-end' : 'justify-start'}`}>
-                                        <div
-                                            className={`max-w-[75%] px-4 py-2 text-sm text-white ${isBenim
-                                                ? 'bg-green-600 rounded-2xl rounded-tr-sm'
-                                                : 'bg-white/10 rounded-2xl rounded-tl-sm'
-                                                }`}
-                                        >
-                                            {mesaj.icerik}
-                                        </div>
+                                        {isBenim ? (
+                                            <div className="flex items-center gap-1 justify-end">
+                                                <div className="rounded-2xl bg-green-600 px-4 py-2 text-white">
+                                                    {mesaj.icerik}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="max-w-[75%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-2 text-sm text-white">
+                                                {mesaj.icerik}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -631,4 +669,6 @@ export default function MesajlarPage() {
         </Suspense>
     );
 }
+
+
 

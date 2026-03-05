@@ -176,6 +176,23 @@ export default function ProfilPage() {
     router.refresh();
   };
 
+  const arkadasSil = async (arkadaslikId: string) => {
+    const onay = confirm('Bu kişiyi arkadaş listesinden çıkarmak istiyor musunuz?');
+    if (!onay) return;
+
+    const { error } = await supabase
+      .from('arkadasliklar')
+      .delete()
+      .eq('id', arkadaslikId);
+
+    if (!error) {
+      setArkadaslar(prev =>
+        prev.filter(a => a.id !== arkadaslikId)
+      );
+      setArkadasSayisi(prev => prev - 1);
+    }
+  };
+
   if (yukleniyor) {
     return <div className="mx-auto mt-24 max-w-xl px-4 text-center text-sm text-white/40">Yükleniyor...</div>;
   }
@@ -430,12 +447,20 @@ export default function ProfilPage() {
                       <p className="font-bold text-white text-sm truncate">{arkadas.ad}</p>
                     </div>
                   </div>
-                  <Link
-                    href={`/profil/${arkadas.id}`}
-                    className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/10 hover:text-green-400"
-                  >
-                    Profile Git
-                  </Link>
+                  <div className="shrink-0 flex items-center gap-2">
+                    <Link
+                      href={`/profil/${arkadas.id}`}
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/10 hover:text-green-400"
+                    >
+                      Profile Git
+                    </Link>
+                    <button
+                      onClick={() => arkadasSil(item.id)}
+                      className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition"
+                    >
+                      Çıkar
+                    </button>
+                  </div>
                 </div>
               );
             })
